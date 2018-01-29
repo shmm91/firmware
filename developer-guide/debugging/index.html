@@ -1,0 +1,1043 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+        <link rel="canonical" href="http://rosflight.org/developer-guide/debugging/">
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../custom_theme/img/favicon.ico">
+      <meta name="generator" content="mkdocs-0.17.2, mkdocs-material-2.5.3">
+    
+    
+      
+        <title>Using a Debugger - ROSflight</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.aa3de92b.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.792431c1.css">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.1aa3b519.js"></script>
+    
+    
+      
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
+    
+      <link rel="stylesheet" href="../../custom_theme/extra.css">
+    
+    
+  </head>
+  
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="red">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
+    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
+    
+      <a href="#using-an-in-circuit-debugger-with-a-naze32-and-variants" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="http://rosflight.org" title="ROSflight" class="md-header-nav__button md-logo">
+          
+            <img src="../../custom_theme/img/logo.png" width="24" height="24">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            
+              <span class="md-header-nav__topic">
+                ROSflight
+              </span>
+              <span class="md-header-nav__topic">
+                Using a Debugger
+              </span>
+            
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          
+            <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
+            
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+          
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+
+  <a href="https://github.com/rosflight/firmware/" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    </div>
+  </a>
+
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../.." title="Home" class="md-tabs__link">
+        Home
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../user-guide/getting-started/" title="User Guide" class="md-tabs__link">
+          User Guide
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../contribution-guidelines/" title="Developer Guide" class="md-tabs__link md-tabs__link--active">
+          Developer Guide
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="drawer">
+    <span class="md-nav__button md-logo">
+      
+        <img src="../../custom_theme/img/logo.png" width="24" height="24">
+      
+    </span>
+    ROSflight
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+
+  <a href="https://github.com/rosflight/firmware/" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    </div>
+  </a>
+
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      User Guide
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        User Guide
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/getting-started/" title="Getting started" class="md-nav__link">
+      Getting started
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/hardware-setup/" title="Hardware setup" class="md-nav__link">
+      Hardware setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/autopilot-setup/" title="Autopilot setup" class="md-nav__link">
+      Autopilot setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/rc-configuration/" title="RC Configuration" class="md-nav__link">
+      RC Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/ros-setup/" title="ROS setup" class="md-nav__link">
+      ROS setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/parameter-configuration/" title="Parameter Configuration" class="md-nav__link">
+      Parameter Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/preflight-checks/" title="Preflight checks" class="md-nav__link">
+      Preflight checks
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/performance/" title="Improving performance" class="md-nav__link">
+      Improving performance
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/gazebo_simulation/" title="Running Gazebo Simulation" class="md-nav__link">
+      Running Gazebo Simulation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../user-guide/autonomous-flight/" title="Autonomous flight" class="md-nav__link">
+      Autonomous flight
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      Developer Guide
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Developer Guide
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../contribution-guidelines/" title="Contribution Guidelines" class="md-nav__link">
+      Contribution Guidelines
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../style-guide/" title="Style Guide" class="md-nav__link">
+      Style Guide
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../code-architecture/" title="Code Architecture" class="md-nav__link">
+      Code Architecture
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../building-flashing/" title="Building and Flashing" class="md-nav__link">
+      Building and Flashing
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Using a Debugger
+      </label>
+    
+    <a href="./" title="Using a Debugger" class="md-nav__link md-nav__link--active">
+      Using a Debugger
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#add-user-to-dailout-group" title="Add User to Dailout Group" class="md-nav__link">
+    Add User to Dailout Group
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-qtcreator" title="Install QtCreator" class="md-nav__link">
+    Install QtCreator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-openocd" title="Install openocd" class="md-nav__link">
+    Install openocd
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-arm-compiler-and-32-bit-dependencies" title="Install ARM compiler and 32-bit Dependencies" class="md-nav__link">
+    Install ARM compiler and 32-bit Dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-qtcreator-for-arm-development" title="Configure QtCreator for ARM Development" class="md-nav__link">
+    Configure QtCreator for ARM Development
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#turn-on-the-bare-metal-plugin" title="Turn on the "Bare Metal Plugin"" class="md-nav__link">
+    Turn on the "Bare Metal Plugin"
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tell-qtcreator-where-to-find-the-compiler-gcc" title="Tell QtCreator where to find the compiler (GCC)" class="md-nav__link">
+    Tell QtCreator where to find the compiler (GCC)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-the-debugger-gdb" title="Add the Debugger (GDB)" class="md-nav__link">
+    Add the Debugger (GDB)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-the-stlink-v2-with-openocd" title="Configure the STLink-V2 with OpenOCD" class="md-nav__link">
+    Configure the STLink-V2 with OpenOCD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-new-development-kit" title="Build the new Development Kit" class="md-nav__link">
+    Build the new Development Kit
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-the-debugger" title="Test the Debugger" class="md-nav__link">
+    Test the Debugger
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#turn-on-debugger" title="Turn on Debugger" class="md-nav__link">
+    Turn on Debugger
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-correct-example-code" title="Build the Correct Example Code" class="md-nav__link">
+    Build the Correct Example Code
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-the-build-environment" title="Configure the Build Environment" class="md-nav__link">
+    Configure the Build Environment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writing-documentation/" title="Writing Documentation" class="md-nav__link">
+      Writing Documentation
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#add-user-to-dailout-group" title="Add User to Dailout Group" class="md-nav__link">
+    Add User to Dailout Group
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-qtcreator" title="Install QtCreator" class="md-nav__link">
+    Install QtCreator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-openocd" title="Install openocd" class="md-nav__link">
+    Install openocd
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-arm-compiler-and-32-bit-dependencies" title="Install ARM compiler and 32-bit Dependencies" class="md-nav__link">
+    Install ARM compiler and 32-bit Dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-qtcreator-for-arm-development" title="Configure QtCreator for ARM Development" class="md-nav__link">
+    Configure QtCreator for ARM Development
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#turn-on-the-bare-metal-plugin" title="Turn on the "Bare Metal Plugin"" class="md-nav__link">
+    Turn on the "Bare Metal Plugin"
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tell-qtcreator-where-to-find-the-compiler-gcc" title="Tell QtCreator where to find the compiler (GCC)" class="md-nav__link">
+    Tell QtCreator where to find the compiler (GCC)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-the-debugger-gdb" title="Add the Debugger (GDB)" class="md-nav__link">
+    Add the Debugger (GDB)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-the-stlink-v2-with-openocd" title="Configure the STLink-V2 with OpenOCD" class="md-nav__link">
+    Configure the STLink-V2 with OpenOCD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-new-development-kit" title="Build the new Development Kit" class="md-nav__link">
+    Build the new Development Kit
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-the-debugger" title="Test the Debugger" class="md-nav__link">
+    Test the Debugger
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#turn-on-debugger" title="Turn on Debugger" class="md-nav__link">
+    Turn on Debugger
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-correct-example-code" title="Build the Correct Example Code" class="md-nav__link">
+    Build the Correct Example Code
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-the-build-environment" title="Configure the Build Environment" class="md-nav__link">
+    Configure the Build Environment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/rosflight/firmware/blob/master/docs/developer-guide/debugging.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="using-an-in-circuit-debugger-with-a-naze32-and-variants">Using an In-Circuit Debugger with a Naze32 (and variants)<a class="headerlink" href="#using-an-in-circuit-debugger-with-a-naze32-and-variants" title="Permanent link">&para;</a></h1>
+<p>Debugging a naze32 is easiest with an ST-Link V2.  You can find these on Amazon and other websites. The following guide will get you up and running with QtCreator and the in-circuit debugger.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>We have had reports of problems with cheap clones of ST-Links not connecting.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>It appears that perhaps debugging only works with Ubuntu 16.04 because of some issues with gdb-py and the "textinfo" tool in 14.04.</p>
+</div>
+<h2 id="add-user-to-dailout-group">Add User to Dailout Group<a class="headerlink" href="#add-user-to-dailout-group" title="Permanent link">&para;</a></h2>
+<p>First, make sure you are in the <code class="codehilite">dialout</code> group:</p>
+<div class="codehilite"><pre><span></span>sudo adduser <span class="nv">$USER</span> dialout
+</pre></div>
+
+<p>Log out and back in for changes to take effect.</p>
+<h2 id="install-qtcreator">Install QtCreator<a class="headerlink" href="#install-qtcreator" title="Permanent link">&para;</a></h2>
+<p>For some reason, the QtCreator bundled with 16.04 is unstable.  4.2.0 messes up ROS workspaces, so the most recent stable build for use with ROS and debugging is 4.1.0.  Download it from <a href="https://download.qt.io/official_releases/qtcreator/4.1/4.1.0/installer_source/linux_gcc_64_rhel66/qtcreator.7z">here</a>.</p>
+<p>This downloads a <code class="codehilite"><span class="nf">.7z</span></code> file, which requires <code class="codehilite">p7zip</code> to extract.  After downloading extract and install qtcreator:</p>
+<div class="codehilite"><pre><span></span>sudo apt-get install p7zip-full
+<span class="nb">cd</span> ~/Downloads
+mkdir qtcreator
+mv qtcreator.7z qtcreator/.
+<span class="nb">cd</span> qtcreator
+p7zip -d qtcreator.7z
+<span class="nb">cd</span> ..
+sudo mv qtcreator /opt/.
+sudo ln -s /opt/qtcreator/bin/qtcreator /usr/bin/.
+</pre></div>
+
+<p>If you want the icon to appear in your unity menu, create the following file as /usr/share/applications/qtcreator.desktop</p>
+<div class="codehilite"><pre><span></span><span class="k">[Desktop Entry]</span>
+<span class="na">Exec</span><span class="o">=</span><span class="s">bash -i -c qtcreator %F</span>
+<span class="na">Icon</span><span class="o">=</span><span class="s">qtcreator</span>
+<span class="na">Type</span><span class="o">=</span><span class="s">Application</span>
+<span class="na">Terminal</span><span class="o">=</span><span class="s">false</span>
+<span class="na">Name</span><span class="o">=</span><span class="s">Qt Creator</span>
+<span class="na">GenericName</span><span class="o">=</span><span class="s">Integrated Development Environment</span>
+<span class="na">MimeType</span><span class="o">=</span><span class="s">text/x-c++src;text/x-c++hdr;text/x-xsrc;application/x-designer;application/vnd.nokia.qt.qmakeprofile;application/vnd.nokia.xml.qt.resource;</span>
+<span class="na">Categories</span><span class="o">=</span><span class="s">Qt;Development;IDE;</span>
+<span class="na">InitialPreference</span><span class="o">=</span><span class="s">9</span>
+</pre></div>
+
+<h2 id="install-openocd">Install openocd<a class="headerlink" href="#install-openocd" title="Permanent link">&para;</a></h2>
+<p>Open OCD (On-Chip-Debugger) is the software that will control the debugger.  We are going to install the version that is configured to work as a plugin for the eclipse IDE.  To get this version, go to the <strong><a href="https://github.com/gnuarmeclipse/openocd/releases">releases</a></strong> page of the OpenOCD github page and download the latest <code class="codehilite"><span class="na">.tgz</span></code> file</p>
+<div class="codehilite"><pre><span></span><span class="nb">cd</span> ~/Downloads
+tar -xvf gnuarmeclipse-openocd-debian32-0.10.0-201610281609-dev.tgz <span class="o">(</span>or whatever<span class="o">)</span>
+sudo mv openocd /opt/.
+</pre></div>
+
+<p>Then, for convenience, I normally create a script to run openocd for me.  Here is my <code class="codehilite">start_openocd_f1</code> script</p>
+<div class="codehilite"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="nb">cd</span> /opt/openocd/0.10.0-201701241841/bin
+./openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg
+</pre></div>
+
+<p>Here is my <code class="codehilite">start_openocd_f4</code> script</p>
+<div class="codehilite"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="nb">cd</span> /opt/openocd/0.10.0-5-20171110-1117/bin
+./openocd -f interface/stlink-v2.cfg -f target/stm32f4x.cfg
+</pre></div>
+
+<p>I move these the <code class="codehilite">usr/local/bin</code> directory so I can call it from anywhere:</p>
+<div class="codehilite"><pre><span></span>chmod +x start_openocd_f1
+chmod +x start_openocd_f4
+mv start_openocd_f1 usr/local/bin
+mv start_openocd_f4 usr/local/bin
+</pre></div>
+
+<h2 id="install-arm-compiler-and-32-bit-dependencies">Install ARM compiler and 32-bit Dependencies<a class="headerlink" href="#install-arm-compiler-and-32-bit-dependencies" title="Permanent link">&para;</a></h2>
+<p>Follow the guide in <a href="../building-flashing/">Building and Flashing</a> to install the compiler.</p>
+<p>QtCreator also needs 32-bit python bindings to run GDB</p>
+<div class="codehilite"><pre><span></span>sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install libpython2.7:i386
+</pre></div>
+
+<h2 id="configure-qtcreator-for-arm-development">Configure QtCreator for ARM Development<a class="headerlink" href="#configure-qtcreator-for-arm-development" title="Permanent link">&para;</a></h2>
+<p>Open up the new QtCreator you just installed (make sure it's the new one, and not the version you get from <code class="codehilite">apt-get</code>)</p>
+<h3 id="turn-on-the-bare-metal-plugin">Turn on the "Bare Metal Plugin"<a class="headerlink" href="#turn-on-the-bare-metal-plugin" title="Permanent link">&para;</a></h3>
+<p>Help -&gt; About Plugins -&gt; Enable "Bare Metal"</p>
+<p>Restart QtCreator</p>
+<p>Now, we're going to configure a new "Kit" for ARM development (this allows you to quickly switch back and forth between ARM and normal development)</p>
+<h3 id="tell-qtcreator-where-to-find-the-compiler-gcc">Tell QtCreator where to find the compiler (GCC)<a class="headerlink" href="#tell-qtcreator-where-to-find-the-compiler-gcc" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Tools -&gt; Options -&gt; Build &amp; Run -&gt; Compilers -&gt; Add -&gt; GCC -&gt; C++.</li>
+<li>Name the new compiler "G++ ARM" (or something)</li>
+<li>Point the compiler path to where you just installed your fresh GCC.</li>
+<li>The path for G++ <code class="codehilite">/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-g++</code></li>
+</ul>
+<p>Do the same for GCC (if you are going to be doing any C-only code)</p>
+<ul>
+<li>Tools -&gt; Options -&gt; Build &amp; Run -&gt; Compilers -&gt; Add -&gt; GCC -&gt; C.</li>
+<li>Name the compiler (I named my compiler "GCC ARM)</li>
+<li>The path for GCC is <code class="codehilite">/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc</code></li>
+</ul>
+<p><img alt="choosing_compiler" src="../images/choosing_compiler_screenshot.png" /></p>
+<h3 id="add-the-debugger-gdb">Add the Debugger (GDB)<a class="headerlink" href="#add-the-debugger-gdb" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Tools -&gt; Options -&gt; Build &amp; Run -&gt; Debuggers -&gt; Add -&gt; GDB.</li>
+<li>Name it something</li>
+<li>Point it to the new debugger you just installed</li>
+<li>The Path for <code class="codehilite">/opt/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gdb-py</code></li>
+</ul>
+<p><img alt="choosing_debugger" src="../images/choosing_debugger.png" /></p>
+<h3 id="configure-the-stlink-v2-with-openocd">Configure the STLink-V2 with OpenOCD<a class="headerlink" href="#configure-the-stlink-v2-with-openocd" title="Permanent link">&para;</a></h3>
+<p>Go to the Bare Metal Plugin</p>
+<ul>
+<li>Tools -&gt; Options -&gt; Devices -&gt; Bare Metal -&gt; Add -&gt; OpenOCD</li>
+<li>Leave all options at default values and click Apply
+<img alt="configuring_openocd" src="../images/configuring_OpenOCD.png" /></li>
+<li>Tools -&gt; Options -&gt; Devices -&gt; Devices -&gt; Add -&gt; Bare Metal Device -&gt; Start Wizard</li>
+<li><strong>Name:</strong> ST-Link V2</li>
+<li><strong>GDB Server Provider:</strong> OpenOCD
+<img alt="configuring_stlink" src="../images/configuring_STLink.png" /></li>
+</ul>
+<h3 id="build-the-new-development-kit">Build the new Development Kit<a class="headerlink" href="#build-the-new-development-kit" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Tools -&gt; Options -&gt; Build &amp; Run -&gt; Kits -&gt; Add</li>
+<li>Name: ARM</li>
+<li>Device Type: Bare Metal Device</li>
+<li>Device: ST-Link V2</li>
+<li>Compiler: GCC ARM/G++ ARM</li>
+<li>Debugger: ARM GDB</li>
+<li>Qt Version: None</li>
+</ul>
+<p><img alt="ARM_kit" src="../images/ARM_kit.png" /></p>
+<h2 id="test-the-debugger">Test the Debugger<a class="headerlink" href="#test-the-debugger" title="Permanent link">&para;</a></h2>
+<h3 id="turn-on-debugger">Turn on Debugger<a class="headerlink" href="#turn-on-debugger" title="Permanent link">&para;</a></h3>
+<p>Connect the Debugger to your flight controller.  Here is the pinout for the Flip32 and flip32+
+<img alt="flip32 pinout" src="http://www.dronetrest.com/uploads/db5290/694/14344b7ed01cb324.jpg" /></p>
+<p>Plug in the debugger and start openocd (you'll need sudo privileges)</p>
+<p><code class="codehilite">sudo start_openocd_f1</code></p>
+<h3 id="build-the-correct-example-code">Build the Correct Example Code<a class="headerlink" href="#build-the-correct-example-code" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Import Existing Project</li>
+<li>Open the root of the firmware</li>
+<li>Do <em><strong>not</strong></em> add .creator files to the Git repository</li>
+</ul>
+<h3 id="configure-the-build-environment">Configure the Build Environment<a class="headerlink" href="#configure-the-build-environment" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Go to the Projects Tab on the left hand side</li>
+<li>Switch to the ARM Kit we just created</li>
+<li>Build Settings:<ul>
+<li>Change Build Directory to the firmware root</li>
+<li>Build Steps: <code class="codehilite">make DEBUG=GDB</code>
+<img alt="build" src="../images/build.png" /></li>
+</ul>
+</li>
+<li>Run Settings:<ul>
+<li>Change Run Configuration to hardware debugger</li>
+<li>Choose the <code class="codehilite"><span class="na">.elf</span></code> file in the <code class="codehilite">boards/naze/build</code> directory (you'll need to build first) <code class="codehilite">.../firmware/boards/naze/build/rosflight.elf</code>
+<img alt="run" src="../images/run.png" /></li>
+</ul>
+</li>
+</ul>
+<p>You're done!  Just select the Debug tab and debug your project!</p>
+                
+                  
+                
+              
+              
+                
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../building-flashing/" title="Building and Flashing" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Building and Flashing
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../writing-documentation/" title="Writing Documentation" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Writing Documentation
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="http://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+        
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.f041762f.js"></script>
+      
+      <script>app.initialize({version:"0.17.2",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+    
+    
+      
+        <script>!function(e,a,t,n,o,c,i){e.GoogleAnalyticsObject=o,e.ga=e.ga||function(){(e.ga.q=e.ga.q||[]).push(arguments)},e.ga.l=1*new Date,c=a.createElement(t),i=a.getElementsByTagName(t)[0],c.async=1,c.src="https://www.google-analytics.com/analytics.js",i.parentNode.insertBefore(c,i)}(window,document,"script",0,"ga"),ga("create","UA-96018590-2","docs.rosflight.org"),ga("set","anonymizeIp",!0),ga("send","pageview");var links=document.getElementsByTagName("a");if(Array.prototype.map.call(links,function(e){e.host!=document.location.host&&e.addEventListener("click",function(){var a=e.getAttribute("data-md-action")||"follow";ga("send","event","outbound",a,e.href)})}),document.forms.search){var query=document.forms.search.query;query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})}</script>
+      
+    
+  </body>
+</html>
