@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, James Jackson and Daniel Koch, BYU MAGICC Lab
+ * Copyright (c) 2017, James Jackson, Daniel Koch, and Craig Bidstrup,
+ * BYU MAGICC Lab
  *
  * All rights reserved.
  *
@@ -36,11 +37,23 @@
 #include "sensors.h"
 #include "rosflight.h"
 
-#include <turbotrig/turbovec.h>
-#include <turbotrig/turbotrig.h>
+#include <turbomath/turbomath.h>
 
 namespace rosflight_firmware
 {
+
+const float Sensors::BARO_MAX_CHANGE_RATE = 200.0f;    // approx 200 m/s
+const float Sensors::BARO_SAMPLE_RATE = 50.0f;
+const float Sensors::DIFF_MAX_CHANGE_RATE = 225.0f;      // approx 15 m/s^2
+const float Sensors::DIFF_SAMPLE_RATE = 50.0f;
+const float Sensors::SONAR_MAX_CHANGE_RATE = 100.0f;    // 100 m/s
+const float Sensors::SONAR_SAMPLE_RATE = 50.0f;
+
+const int Sensors::SENSOR_CAL_DELAY_CYCLES = 128;
+const int Sensors::SENSOR_CAL_CYCLES = 127;
+
+const float Sensors::BARO_MAX_CALIBRATION_VARIANCE = 25.0;   // standard dev about 0.2 m
+const float Sensors::DIFF_PRESSURE_MAX_CALIBRATION_VARIANCE = 100.0;   // standard dev about 3 m/s
 
 Sensors::Sensors(ROSflight& rosflight) :
   rf_(rosflight)
@@ -48,11 +61,35 @@ Sensors::Sensors(ROSflight& rosflight) :
 
 void Sensors::init()
 {
+  rf_.params_.add_callback(std::bind(&Sensors::param_change_callback, this, std::placeholders::_1), PARAM_FC_ROLL);
+  rf_.params_.add_callback(std::bind(&Sensors::param_change_callback, this, std::placeholders::_1), PARAM_FC_PITCH);
+  rf_.params_.add_callback(std::bind(&Sensors::param_change_callback, this, std::placeholders::_1), PARAM_FC_YAW);
+
   new_imu_data_ = false;
 
   // clear the IMU read error
   rf_.state_manager_.clear_error(StateManager::ERROR_IMU_NOT_RESPONDING);
   rf_.board_.sensors_init();
+
+  init_imu();
+
+  next_sensor_to_update_ = BAROMETER;
+
+  float alt = rf_.params_.get_param_float(PARAM_GROUND_LEVEL);
+  ground_pressure_ = 101325.0f*static_cast<float>(pow((1-2.25694e-5 * alt), 5.2553));
+
+  baro_outlier_filt_.init(BARO_MAX_CHANGE_RATE, BARO_SAMPLE_RATE, ground_pressure_);
+  diff_outlier_filt_.init(DIFF_MAX_CHANGE_RATE, DIFF_SAMPLE_RATE, 0.0f);
+  sonar_outlier_filt_.init(SONAR_MAX_CHANGE_RATE, SONAR_SAMPLE_RATE, 0.0f);
+}
+
+void Sensors::init_imu()
+{
+  // Quaternion to compensate for FCU orientation
+  float roll = rf_.params_.get_param_float(PARAM_FC_ROLL) * 0.017453293;
+  float pitch = rf_.params_.get_param_float(PARAM_FC_PITCH) * 0.017453293;
+  float yaw = rf_.params_.get_param_float(PARAM_FC_YAW) * 0.017453293;
+  data_.fcu_orientation = turbomath::Quaternion(roll, pitch, yaw);
 
   // See if the IMU is uncalibrated, and throw an error if it is
   if (rf_.params_.get_param_float(PARAM_ACC_X_BIAS) == 0.0 && rf_.params_.get_param_float(PARAM_ACC_Y_BIAS) == 0.0 &&
@@ -61,10 +98,12 @@ void Sensors::init()
   {
     rf_.state_manager_.set_error(StateManager::ERROR_UNCALIBRATED_IMU);
   }
-  next_sensor_to_update_ = 0;
+}
 
-  float alt = rf_.params_.get_param_float(PARAM_GROUND_LEVEL);
-  ground_pressure_ = 101325.0*pow((1-2.25577e-5 * alt), 5.25588);
+void Sensors::param_change_callback(uint16_t param_id)
+{
+  (void) param_id; // suppress unused parameter warning
+  init_imu();
 }
 
 
@@ -89,30 +128,43 @@ bool Sensors::run(void)
 
 void Sensors::update_other_sensors()
 {
-  uint32_t now = rf_.board_.clock_millis();
   switch (next_sensor_to_update_)
   {
-  case 0:
+  case LowPrioritySensors::BAROMETER:
     if (data_.baro_present)
     {
-      rf_.board_.baro_read(&data_.baro_pressure, &data_.baro_temperature);
-      correct_baro();
+      float raw_pressure;
+      float raw_temp;
+      rf_.board_.baro_read(&raw_pressure, &raw_temp);
+      data_.baro_valid = baro_outlier_filt_.update(raw_pressure, &data_.baro_pressure);
+      if (data_.baro_valid)
+      {
+        data_.baro_temperature = raw_temp;
+        correct_baro();
+      }
     }
     break;
-  case 1:
+  case LowPrioritySensors::DIFF_PRESSURE:
     if (data_.diff_pressure_present)
     {
-      rf_.board_.diff_pressure_read(&data_.diff_pressure, &data_.diff_pressure_temp);
-      correct_diff_pressure();
+      float raw_pressure;
+      float raw_temp;
+      rf_.board_.diff_pressure_read(&raw_pressure, &raw_temp);
+      data_.diff_pressure_valid = diff_outlier_filt_.update(raw_pressure, &data_.diff_pressure);
+      if (data_.diff_pressure_valid)
+      {
+        data_.diff_pressure_temp = raw_temp;
+        correct_diff_pressure();
+      }
     }
     break;
-  case 2:
+  case LowPrioritySensors::SONAR:
     if (data_.sonar_present)
     {
-      data_.sonar_range = rf_.board_.sonar_read();
+      data_.sonar_range_valid = sonar_outlier_filt_.update(rf_.board_.sonar_read(), &data_.sonar_range);
     }
     break;
-  case 3:
+  case LowPrioritySensors::MAGNETOMETER:
     if (data_.mag_present)
     {
       float mag[3];
@@ -123,8 +175,10 @@ void Sensors::update_other_sensors()
       correct_mag();
     }
     break;
+  default:
+    break;
   }
-  next_sensor_to_update_ = (next_sensor_to_update_ + 1) % 4;
+  next_sensor_to_update_ = static_cast<LowPrioritySensors>((next_sensor_to_update_ + 1) % NUM_LOW_PRIORITY_SENSORS);
 }
 
 
@@ -143,7 +197,7 @@ void Sensors::look_for_disabled_sensors()
       if (rf_.board_.sonar_check())
       {
         data_.sonar_present = true;
-        rf_.mavlink_.log(Mavlink::LOG_INFO, "FOUND SONAR");
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "FOUND SONAR");
       }
     }
     if (!data_.diff_pressure_present)
@@ -151,7 +205,7 @@ void Sensors::look_for_disabled_sensors()
       if (rf_.board_.diff_pressure_check())
       {
         data_.diff_pressure_present = true;
-        rf_.mavlink_.log(Mavlink::LOG_INFO, "FOUND DIFF PRESS");
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "FOUND DIFF PRESS");
       }
     }
     if (!data_.baro_present)
@@ -159,7 +213,7 @@ void Sensors::look_for_disabled_sensors()
       if (rf_.board_.baro_check())
       {
         data_.baro_present = true;
-        rf_.mavlink_.log(Mavlink::LOG_INFO, "FOUND BAROMETER");
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "FOUND BAROMETER");
       }
     }
     if (!data_.mag_present)
@@ -167,7 +221,7 @@ void Sensors::look_for_disabled_sensors()
       if (rf_.board_.mag_check())
       {
         data_.mag_present = true;
-        rf_.mavlink_.log(Mavlink::LOG_INFO, "FOUND MAGNETOMETER");
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "FOUND MAGNETOMETER");
       }
     }
   }
@@ -195,6 +249,9 @@ bool Sensors::start_gyro_calibration(void)
 
 bool Sensors::start_baro_calibration()
 {
+  baro_calibration_mean_ = 0.0f;
+  baro_calibration_var_ = 0.0f;
+  baro_calibration_count_ = 0;
   baro_calibrated_ = false;
   rf_.params_.set_param_float(PARAM_BARO_BIAS, 0.0f);
   return true;
@@ -202,6 +259,9 @@ bool Sensors::start_baro_calibration()
 
 bool Sensors::start_diff_pressure_calibration()
 {
+  diff_pressure_calibration_mean_ = 0.0f;
+  diff_pressure_calibration_var_ = 0.0f;
+  diff_pressure_calibration_count_ = 0;
   diff_pressure_calibrated_ = false;
   rf_.params_.set_param_float(PARAM_DIFF_PRESS_BIAS, 0.0f);
   return true;
@@ -229,11 +289,15 @@ bool Sensors::update_imu(void)
     data_.accel.y = accel_[1];
     data_.accel.z = accel_[2];
 
+    data_.accel = data_.fcu_orientation * data_.accel;
+
     data_.gyro.x = gyro_[0];
     data_.gyro.y = gyro_[1];
     data_.gyro.z = gyro_[2];
 
-    if (calibrating_acc_flag_ == true)
+    data_.gyro = data_.fcu_orientation * data_.gyro;
+
+    if (calibrating_acc_flag_)
       calibrate_accel();
     if (calibrating_gyro_flag_)
       calibrate_gyro();
@@ -243,12 +307,17 @@ bool Sensors::update_imu(void)
   }
   else
   {
-    // if we have lost 1000 IMU messages then something is wrong
-    if (rf_.board_.clock_millis() > last_imu_update_ms_ + 1000)
+    // if we have lost 10 IMU messages then something is wrong
+    // However, because we look for disabled sensors while disarmed,
+    // we get IMU timeouts, which last for at least 10 ms.  Therefore
+    // we have an adjustable imu_timeout.
+    int imu_timeout = rf_.state_manager_.state().armed ? 10 : 1000;
+    if (rf_.board_.clock_millis() > last_imu_update_ms_ + imu_timeout)
     {
       // Tell the board to fix it
       last_imu_update_ms_ = rf_.board_.clock_millis();
-      rf_.board_.imu_not_responding_error();
+      if (!rf_.state_manager_.state().armed)
+        rf_.board_.imu_not_responding_error();
 
       // Indicate an IMU error
       rf_.state_manager_.set_error(StateManager::ERROR_IMU_NOT_RESPONDING);
@@ -261,18 +330,15 @@ bool Sensors::update_imu(void)
 // Calibration Functions
 void Sensors::calibrate_gyro()
 {
-  gyro_sum_.x = 0.0f;
-  gyro_sum_.y = 0.0f;
-  gyro_sum_.z = 0.0f;
-  gyro_sum_ = vector_add(gyro_sum_, data_.gyro);
+  gyro_sum_ += data_.gyro;
   gyro_calibration_count_++;
 
-  if (gyro_calibration_count_ > 100)
+  if (gyro_calibration_count_ > 1000)
   {
     // Gyros are simple.  Just find the average during the calibration
-    vector_t gyro_bias = scalar_multiply(1.0/(float)gyro_calibration_count_, gyro_sum_);
+    turbomath::Vector gyro_bias = gyro_sum_ / static_cast<float>(gyro_calibration_count_);
 
-    if (norm(gyro_bias) < 1.0)
+    if (gyro_bias.norm() < 1.0)
     {
       rf_.params_.set_param_float(PARAM_GYRO_X_BIAS, gyro_bias.x);
       rf_.params_.set_param_float(PARAM_GYRO_Y_BIAS, gyro_bias.y);
@@ -288,7 +354,7 @@ void Sensors::calibrate_gyro()
     {
       // Tell the state manager that we just failed a gyro calibration
       rf_.state_manager_.set_event(StateManager::EVENT_CALIBRATION_FAILED);
-      rf_.mavlink_.log(Mavlink::LOG_ERROR, "Too much movement for gyro cal");
+      rf_.comm_manager_.log(CommLink::LogSeverity::LOG_ERROR, "Too much movement for gyro cal");
     }
 
     // reset calibration in case we do it again
@@ -300,28 +366,24 @@ void Sensors::calibrate_gyro()
   }
 }
 
-vector_t vector_max(vector_t a, vector_t b)
+turbomath::Vector vector_max(turbomath::Vector a, turbomath::Vector b)
 {
-  vector_t out = {a.x > b.x ? a.x : b.x,
-                  a.y > b.y ? a.y : b.y,
-                  a.z > b.z ? a.z : b.z
-                 };
-  return out;
+  return turbomath::Vector(a.x > b.x ? a.x : b.x,
+                           a.y > b.y ? a.y : b.y,
+                           a.z > b.z ? a.z : b.z);
 }
 
-vector_t vector_min(vector_t a, vector_t b)
+turbomath::Vector vector_min(turbomath::Vector a, turbomath::Vector b)
 {
-  vector_t out = {a.x < b.x ? a.x : b.x,
-                  a.y < b.y ? a.y : b.y,
-                  a.z < b.z ? a.z : b.z
-                 };
-  return out;
+  return turbomath::Vector(a.x < b.x ? a.x : b.x,
+                           a.y < b.y ? a.y : b.y,
+                           a.z < b.z ? a.z : b.z);
 }
 
 
 void Sensors::calibrate_accel(void)
 {
-  acc_sum_ = vector_add(vector_add(acc_sum_, data_.accel), gravity_);
+  acc_sum_ = acc_sum_ + data_.accel + gravity_;
   acc_temp_sum_ += data_.imu_temperature;
   max_ = vector_max(max_, data_.accel);
   min_ = vector_min(min_, data_.accel);
@@ -332,7 +394,7 @@ void Sensors::calibrate_accel(void)
     // The temperature bias is calculated using a least-squares regression.
     // This is computationally intensive, so it is done by the onboard computer in
     // fcu_io and shipped over to the flight controller.
-    vector_t accel_temp_bias =
+    turbomath::Vector accel_temp_bias =
     {
       rf_.params_.get_param_float(PARAM_ACC_X_TEMP_COMP),
       rf_.params_.get_param_float(PARAM_ACC_Y_TEMP_COMP),
@@ -344,15 +406,15 @@ void Sensors::calibrate_accel(void)
     // Which is why this line is so confusing. What we are doing, is first removing
     // the contribution of temperature to the measurements during the calibration,
     // Then we are dividing by the number of measurements.
-    vector_t accel_bias = scalar_multiply(1.0/(float)accel_calibration_count_, vector_sub(acc_sum_,
-                                          scalar_multiply(acc_temp_sum_, accel_temp_bias)));
+    turbomath::Vector accel_bias = (acc_sum_ - (accel_temp_bias * acc_temp_sum_)) /
+                                    static_cast<float>(accel_calibration_count_);
 
     // Sanity Check -
     // If the accelerometer is upside down or being spun around during the calibration,
     // then don't do anything
-    if (norm(vector_sub(max_, min_)) > 1.0)
+    if ((max_- min_).norm() > 1.0)
     {
-      rf_.mavlink_.log(Mavlink::LOG_ERROR, "Too much movement for IMU cal");
+      rf_.comm_manager_.log(CommLink::LogSeverity::LOG_ERROR, "Too much movement for IMU cal");
       calibrating_acc_flag_ = false;
     }
     else
@@ -361,12 +423,12 @@ void Sensors::calibrate_accel(void)
       rf_.estimator_.reset_state();
       calibrating_acc_flag_ = false;
 
-      if (norm(accel_bias) < 3.0)
+      if (accel_bias.norm() < 3.0)
       {
         rf_.params_.set_param_float(PARAM_ACC_X_BIAS, accel_bias.x);
         rf_.params_.set_param_float(PARAM_ACC_Y_BIAS, accel_bias.y);
         rf_.params_.set_param_float(PARAM_ACC_Z_BIAS, accel_bias.z);
-        rf_.mavlink_.log(Mavlink::LOG_INFO, "IMU offsets captured");
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "IMU offsets captured");
 
         // clear uncalibrated IMU flag
         rf_.state_manager_.clear_error(StateManager::ERROR_UNCALIBRATED_IMU);
@@ -375,8 +437,9 @@ void Sensors::calibrate_accel(void)
       {
         // This usually means the user has the FCU in the wrong orientation, or something is wrong
         // with the board IMU (like it's a cheap chinese clone)
-        rf_.mavlink_.log(Mavlink::LOG_ERROR, "large accel bias: norm = %d.%d",
-                         (uint32_t)norm(accel_bias), (uint32_t)(norm(accel_bias)*1000)%1000);
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_ERROR, "large accel bias: norm = %d.%d",
+                              static_cast<uint32_t>(accel_bias.norm()),
+                              static_cast<uint32_t>(accel_bias.norm()*1000)%1000);
       }
     }
 
@@ -397,35 +460,74 @@ void Sensors::calibrate_accel(void)
 
 void Sensors::calibrate_baro()
 {
-  baro_calibration_count_++;
+  if (rf_.board_.clock_millis() > last_baro_cal_iter_ms_ + 20)
+  {
+    baro_calibration_count_++;
 
-  if(baro_calibration_count_ > 256)
-  {
-    rf_.params_.set_param_float(PARAM_BARO_BIAS, baro_calibration_sum_ / 127.0f);
-    baro_calibrated_ = true;
-    baro_calibration_sum_ = 0.0f;
-    baro_calibration_count_ = 0;
-  }
-  else if (baro_calibration_count_ > 128)
-  {
-    baro_calibration_sum_ += (data_.baro_pressure - ground_pressure_);
+    // calibrate pressure reading to where it should be
+    if (baro_calibration_count_ > SENSOR_CAL_DELAY_CYCLES + SENSOR_CAL_CYCLES)
+    {
+      // if sample variance within acceptable range, flag calibration as done
+      // else reset cal variables and start over
+      if (baro_calibration_var_ < BARO_MAX_CALIBRATION_VARIANCE)
+      {
+        rf_.params_.set_param_float(PARAM_BARO_BIAS, baro_calibration_mean_);
+        baro_calibrated_ = true;
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "Baro Cal successful!");
+      }
+      else
+      {
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_ERROR, "Too much movement for barometer cal");
+      }
+      baro_calibration_mean_ = 0.0f;
+      baro_calibration_var_ = 0.0f;
+      baro_calibration_count_ = 0;
+    }
+
+    else if (baro_calibration_count_ > SENSOR_CAL_DELAY_CYCLES)
+    {
+      float measurement = data_.baro_pressure - ground_pressure_;
+      float delta = measurement - baro_calibration_mean_;
+      baro_calibration_mean_ += delta / (baro_calibration_count_ - SENSOR_CAL_DELAY_CYCLES);
+      float delta2 = measurement - baro_calibration_mean_;
+      baro_calibration_var_ += delta * delta2 / (SENSOR_CAL_CYCLES - 1);
+    }
+    last_baro_cal_iter_ms_ = rf_.board_.clock_millis();
   }
 }
 
 void Sensors::calibrate_diff_pressure()
 {
-  diff_pressure_calibration_count_++;
+  if (rf_.board_.clock_millis() > last_diff_pressure_cal_iter_ms_ + 20)
+  {
+    diff_pressure_calibration_count_++;
 
-  if(diff_pressure_calibration_count_ > 256)
-  {
-    rf_.params_.set_param_float(PARAM_DIFF_PRESS_BIAS, diff_pressure_calibration_sum_ / 127.0f);
-    diff_pressure_calibrated_ = true;
-    diff_pressure_calibration_sum_ = 0.0f;
-    diff_pressure_calibration_count_ = 0;
-  }
-  else if (diff_pressure_calibration_count_ > 128)
-  {
-    diff_pressure_calibration_sum_ += data_.diff_pressure;
+    if(diff_pressure_calibration_count_ > SENSOR_CAL_DELAY_CYCLES + SENSOR_CAL_CYCLES)
+    {
+      // if sample variance within acceptable range, flag calibration as done
+      // else reset cal variables and start over
+      if (diff_pressure_calibration_var_ < DIFF_PRESSURE_MAX_CALIBRATION_VARIANCE)
+      {
+        rf_.params_.set_param_float(PARAM_DIFF_PRESS_BIAS, diff_pressure_calibration_mean_);
+        diff_pressure_calibrated_ = true;
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "Airspeed Cal Successful!");
+      }
+      else
+      {
+        rf_.comm_manager_.log(CommLink::LogSeverity::LOG_ERROR, "Too much movement for diff pressure cal");
+      }
+      diff_pressure_calibration_mean_ = 0.0f;
+      diff_pressure_calibration_var_ = 0.0f;
+      diff_pressure_calibration_count_ = 0;
+    }
+    else if (diff_pressure_calibration_count_ > SENSOR_CAL_DELAY_CYCLES)
+    {
+      float delta = data_.diff_pressure - diff_pressure_calibration_mean_;
+      diff_pressure_calibration_mean_ += delta / (diff_pressure_calibration_count_ - SENSOR_CAL_DELAY_CYCLES);
+      float delta2 = data_.diff_pressure - diff_pressure_calibration_mean_;
+      diff_pressure_calibration_var_ += delta * delta2 / (SENSOR_CAL_CYCLES - 1);
+    }
+    last_diff_pressure_cal_iter_ms_ = rf_.board_.clock_millis();
   }
 }
 
@@ -471,7 +573,7 @@ void Sensors::correct_baro(void)
   if (!baro_calibrated_)
     calibrate_baro();
   data_.baro_pressure -= rf_.params_.get_param_float(PARAM_BARO_BIAS);
-  data_.baro_altitude = fast_alt(data_.baro_pressure);
+  data_.baro_altitude = turbomath::alt(data_.baro_pressure) - rf_.params_.get_param_float(PARAM_GROUND_LEVEL);
 }
 
 void Sensors::correct_diff_pressure()
@@ -482,7 +584,37 @@ void Sensors::correct_diff_pressure()
   float atm = 101325.0f;
   if (data_.baro_present)
     atm = data_.baro_pressure;
-  data_.diff_pressure_velocity = fsign(data_.diff_pressure) * 24.574f/turboInvSqrt((fabs(data_.diff_pressure) * data_.diff_pressure_temp  /  atm));
+  data_.diff_pressure_velocity = turbomath::fsign(data_.diff_pressure) * 24.574f /
+      turbomath::inv_sqrt((turbomath::fabs(data_.diff_pressure) * data_.diff_pressure_temp  /  atm));
+}
+
+void Sensors::OutlierFilter::init(float max_change_rate, float update_rate, float center)
+{
+  max_change_ = max_change_rate / update_rate;
+  window_size_ = 1;
+  center_ = center;
+  init_ = true;
+}
+
+bool Sensors::OutlierFilter::update(float new_val, float *val)
+{
+  float diff = new_val - center_;
+  if (fabs(diff) < window_size_ * max_change_)
+  {
+    *val = new_val;
+
+    center_ += turbomath::fsign(diff) * fmin(max_change_, turbomath::fabs(diff));
+    if (window_size_ > 1)
+    {
+      window_size_--;
+    }
+    return true;
+  }
+  else
+  {
+    window_size_++;
+    return false;
+  }
 }
 
 } // namespace rosflight_firmware

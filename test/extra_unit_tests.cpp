@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
 #include "rosflight.h"
+#include "mavlink.h"
 #include "test_board.h"
 #include "cmath"
 #include <stdio.h>
 
-#define EXPECT_PRETTYCLOSE(x, y) EXPECT_LE(std::abs(x - y), 0.01)
+#define EXPECT_PRETTYCLOSE(x, y) EXPECT_NEAR(x, y, 0.01)
 
 using namespace rosflight_firmware;
 
@@ -18,9 +19,9 @@ void step_imu(ROSflight& rf, testBoard& board, float acc_data[3])
 
   // Feed in fake acceleration data, run enough times to trigger calibration
   uint64_t start = board.clock_micros();
-  for (int i = start; i < start + 1001; i++)
+  for (uint64_t i = start; i < start + 1001; i++)
   {
-    board.set_imu(acc_data, dummy_gyro, (uint64_t)(i));
+    board.set_imu(acc_data, dummy_gyro, i);
     rf.run();
   }
 }
@@ -28,6 +29,7 @@ void step_imu(ROSflight& rf, testBoard& board, float acc_data[3])
 // Get the bias values out of ROSflight
 void get_bias(ROSflight rf, testBoard board, float bias[3])
 {
+  (void) board;
   bias[0] = rf.params_.get_param_float(PARAM_ACC_X_BIAS);
   bias[1] = rf.params_.get_param_float(PARAM_ACC_Y_BIAS);
   bias[2] = rf.params_.get_param_float(PARAM_ACC_Z_BIAS);
@@ -50,9 +52,9 @@ void step_f(ROSflight& rf, testBoard& board, uint32_t us)
 void step_time(ROSflight& rf, testBoard board, uint32_t us)
 {
   uint64_t start = board.clock_micros();
-  for (int i = start; i <= start + us; i++)
+  for (uint64_t i = start; i <= start + us; i++)
   {
-    board.set_time((uint64_t)(i));
+    board.set_time(i);
     rf.run();
   }
 }
@@ -71,10 +73,10 @@ void err_free_rf_init(ROSflight& rf, testBoard& board)
 {
   rf.init();
   rf.params_.set_param_int(PARAM_MIXER, 1); //std x quad
-  rf.state_manager_.clear_error(ROSFLIGHT_ERROR_INVALID_MIXER);
+  rf.state_manager_.clear_error(StateManager::ERROR_INVALID_MIXER);
   //just need a non-zero on one of these params to prevent uncalibrated imu error
   rf.params_.set_param_float(PARAM_ACC_X_BIAS, 0.1f);
-  rf.state_manager_.clear_error(ROSFLIGHT_ERROR_UNCALIBRATED_IMU);
+  rf.state_manager_.clear_error(StateManager::ERROR_UNCALIBRATED_IMU);
   board.set_pwm_lost(false);
   uint16_t rc_values[8] = {1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};
   board.set_rc(rc_values);
@@ -83,7 +85,8 @@ void err_free_rf_init(ROSflight& rf, testBoard& board)
 TEST(extra_unit_tests, imu_calibration)
 {
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
 
   // Initialize firmware
   rf.init();
@@ -106,7 +109,8 @@ TEST(extra_unit_tests, imu_calibration)
 TEST(extra_unit_tests, time_going_backwards)
 {
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
 
   // data to pass into rosflight
   float accel[3] = {1, 1, -9.8};
@@ -119,18 +123,18 @@ TEST(extra_unit_tests, time_going_backwards)
   rf.state_manager_.clear_error(rf.state_manager_.state().error_codes);
 
   // call testBoard::set_imu so that the new_imu_ flag will get set
-  board.set_imu(accel, gyro, (uint64_t)(board.clock_micros() + 100));
+  board.set_imu(accel, gyro, board.clock_micros() + 100);
   rf.run();
 
   // call set_imu again with a time before the first call
-  board.set_imu(accel, gyro, (uint64_t)(board.clock_micros() - 500));
+  board.set_imu(accel, gyro, board.clock_micros() - 500);
   rf.run();
 
   // make sure that the error was caught
   EXPECT_EQ(rf.state_manager_.state().error, true);
 
   // make time go forwards
-  board.set_imu(accel, gyro, (uint64_t)(board.clock_micros() + 1000));
+  board.set_imu(accel, gyro, board.clock_micros() + 1000);
   rf.run();
 
   // make sure the error got cleared
@@ -140,7 +144,8 @@ TEST(extra_unit_tests, time_going_backwards)
 TEST(extra_unit_tests, imu_not_responding)
 {
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
 
   err_free_rf_init(rf, board);
   
@@ -171,7 +176,8 @@ TEST(extra_unit_tests, anti_windup)
   */
 
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
   uint16_t stick_values[8];
 
   err_free_rf_init(rf, board);
@@ -242,12 +248,10 @@ TEST(extra_unit_tests, anti_windup)
 TEST(extra_unit_tests, equilibrium_torque)
 {
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
   uint16_t stick_values[8];
 
-  float max_roll = rf.params_.get_param_float(PARAM_RC_MAX_ROLL);
-  float max_pitch = rf.params_.get_param_float(PARAM_RC_MAX_PITCH);
-  float max_yawrate = rf.params_.get_param_float(PARAM_RC_MAX_YAWRATE);
   float X_EQ_TORQUE = 0;
   float Y_EQ_TORQUE = 0;
   float Z_EQ_TORQUE = 0;
@@ -288,7 +292,6 @@ TEST(extra_unit_tests, equilibrium_torque)
   
   // center stick_values
   center_controls(board, stick_values);
-  stick_values[2] = 1200;
   board.set_rc(stick_values);
   step_f(rf, board, 20e3);
 
@@ -307,7 +310,8 @@ TEST(extra_unit_tests, equilibrium_torque)
 TEST(extra_unit_tests, mixer_scaling)
 {
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
   uint16_t stick_values[8];
 
   err_free_rf_init(rf, board);
@@ -361,7 +365,8 @@ TEST(extra_unit_tests, mixer_scaling)
 TEST(extra_unit_tests, baro_calibration)
 {
   testBoard board;
-  ROSflight rf(board);
+  Mavlink mavlink(board);
+  ROSflight rf(board, mavlink);
 
   err_free_rf_init(rf, board);
 
@@ -383,7 +388,7 @@ TEST(extra_unit_tests, baro_calibration)
   //1387.0f = default ground level param (meters)
   //with this, pressure should be around 85729 pa
   float alt = rf.params_.get_param_float(PARAM_GROUND_LEVEL);
-  float gnd_press = 101325.0f*(float)pow((1-2.25694e-5 * alt), 5.2553);
+  float gnd_press = 101325.0f*static_cast<float>(pow((1-2.25694e-5 * alt), 5.2553));
 
   //Calibration check1 (init cal):
   float baro_pressure = 101325;

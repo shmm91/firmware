@@ -36,7 +36,6 @@
 #include <string.h>
 
 #include "board.h"
-#include "mavlink.h"
 #include "mixer.h"
 
 #include "param.h"
@@ -57,31 +56,32 @@ Params::Params(ROSflight& _rf) :
 void Params::init_param_int(uint16_t id, const char name[PARAMS_NAME_LENGTH], int32_t value)
 {
   memcpy(params.names[id], name, PARAMS_NAME_LENGTH);
-  params.values[id] = value;
+  params.values[id].ivalue = value;
   params.types[id] = PARAM_TYPE_INT32;
 }
 
 void Params::init_param_float(uint16_t id, const char name[PARAMS_NAME_LENGTH], float value)
 {
   memcpy(params.names[id], name, PARAMS_NAME_LENGTH);
-  params.values[id] = *((int32_t *) &value);
+  params.values[id].fvalue = value;
   params.types[id] = PARAM_TYPE_FLOAT;
 }
 
 uint8_t Params::compute_checksum(void)
 {
   uint8_t chk = 0;
-  const uint8_t *p;
+  const char *p;
 
-  for (p = (const uint8_t *)&params.values; p < ((const uint8_t *)&params.values + 4*PARAMS_COUNT); p++)
+  for (p = reinterpret_cast<const char *>(&params.values); p < reinterpret_cast<const char *>(&params.values) + 4*PARAMS_COUNT; p++)
     chk ^= *p;
-  for (p = (const uint8_t *)&params.names; p < ((const uint8_t *)&params.names + PARAMS_COUNT*PARAMS_NAME_LENGTH); p++)
+  for (p = reinterpret_cast<const char *>(&params.names); p < reinterpret_cast<const char *>(&params.names) + PARAMS_COUNT*PARAMS_NAME_LENGTH; p++)
     chk ^= *p;
-  for (p = (const uint8_t *)&params.types; p < ((const uint8_t *)&params.types + PARAMS_COUNT); p++)
+  for (p = reinterpret_cast<const char *>(&params.types); p < reinterpret_cast<const char *>(&params.types) + PARAMS_COUNT; p++)
     chk ^= *p;
 
   return chk;
 }
+
 
 // function definitions
 void Params::init()
@@ -110,8 +110,8 @@ void Params::set_defaults(void)
 
   init_param_int(PARAM_STREAM_ATTITUDE_RATE, "STRM_ATTITUDE", 200); // Rate of attitude stream (Hz) | 0 | 1000
   init_param_int(PARAM_STREAM_IMU_RATE, "STRM_IMU", 500); // Rate of IMU stream (Hz) | 0 | 1000
-  init_param_int(PARAM_STREAM_MAG_RATE, "STRM_MAG", 75); // Rate of magnetometer stream (Hz) | 0 | 75
-  init_param_int(PARAM_STREAM_BARO_RATE, "STRM_BARO", 100); // Rate of barometer stream (Hz) | 0 | 100
+  init_param_int(PARAM_STREAM_MAG_RATE, "STRM_MAG", 50); // Rate of magnetometer stream (Hz) | 0 | 75
+  init_param_int(PARAM_STREAM_BARO_RATE, "STRM_BARO", 50); // Rate of barometer stream (Hz) | 0 | 100
   init_param_int(PARAM_STREAM_AIRSPEED_RATE, "STRM_AIRSPEED", 20); // Rate of airspeed stream (Hz) | 0 |  50
   init_param_int(PARAM_STREAM_SONAR_RATE, "STRM_SONAR", 40); // Rate of sonar stream (Hz) | 0 | 40
 
@@ -137,11 +137,11 @@ void Params::set_defaults(void)
 
   init_param_float(PARAM_PID_ROLL_ANGLE_P, "PID_ROLL_ANG_P", 0.15f);   // Roll Angle Proporitional Gain | 0.0 | 1000.0
   init_param_float(PARAM_PID_ROLL_ANGLE_I, "PID_ROLL_ANG_I", 0.0f);   // Roll Angle Integral Gain | 0.0 | 1000.0
-  init_param_float(PARAM_PID_ROLL_ANGLE_D, "PID_ROLL_ANG_D", 0.07f);  // Roll Angle Derivative Gain | 0.0 | 1000.0
+  init_param_float(PARAM_PID_ROLL_ANGLE_D, "PID_ROLL_ANG_D", 0.05f);  // Roll Angle Derivative Gain | 0.0 | 1000.0
 
   init_param_float(PARAM_PID_PITCH_ANGLE_P, "PID_PITCH_ANG_P", 0.15f);  // Pitch Angle Proporitional Gain | 0.0 | 1000.0
   init_param_float(PARAM_PID_PITCH_ANGLE_I, "PID_PITCH_ANG_I", 0.0f);  // Pitch Angle Integral Gain | 0.0 | 1000.0
-  init_param_float(PARAM_PID_PITCH_ANGLE_D, "PID_PITCH_ANG_D", 0.07f); // Pitch Angle Derivative Gain | 0.0 | 1000.0
+  init_param_float(PARAM_PID_PITCH_ANGLE_D, "PID_PITCH_ANG_D", 0.05f); // Pitch Angle Derivative Gain | 0.0 | 1000.0
 
   init_param_float(PARAM_X_EQ_TORQUE, "X_EQ_TORQUE", 0.0f); // Equilibrium torque added to output of controller on x axis | -1.0 | 1.0
   init_param_float(PARAM_Y_EQ_TORQUE, "Y_EQ_TORQUE", 0.0f); // Equilibrium torque added to output of controller on y axis | -1.0 | 1.0
@@ -164,17 +164,17 @@ void Params::set_defaults(void)
   /*** ESTIMATOR CONFIGURATION ***/
   /*******************************/
   init_param_int(PARAM_INIT_TIME, "FILTER_INIT_T", 3000); // Time in ms to initialize estimator | 0 | 100000
-  init_param_float(PARAM_FILTER_KP, "FILTER_KP", 1.0f); // estimator proportional gain - See estimator documentation | 0 | 10.0
-  init_param_float(PARAM_FILTER_KI, "FILTER_KI", 0.1f); // estimator integral gain - See estimator documentation | 0 | 1.0
+  init_param_float(PARAM_FILTER_KP, "FILTER_KP", 0.5f); // estimator proportional gain - See estimator documentation | 0 | 10.0
+  init_param_float(PARAM_FILTER_KI, "FILTER_KI", 0.05f); // estimator integral gain - See estimator documentation | 0 | 1.0
 
-  init_param_int(PARAM_FILTER_USE_QUAD_INT, "FILTER_QUAD_INT", 0); // Perform a quadratic averaging of LPF gyro data prior to integration (adds ~20 us to estimation loop on F1 processors) | 0 | 1
-  init_param_int(PARAM_FILTER_USE_MAT_EXP, "FILTER_MAT_EXP", 0); // 1 - Use matrix exponential to improve gyro integration (adds ~90 us to estimation loop in F1 processors) 0 - use euler integration | 0 | 1
+  init_param_int(PARAM_FILTER_USE_QUAD_INT, "FILTER_QUAD_INT", 1); // Perform a quadratic averaging of LPF gyro data prior to integration (adds ~20 us to estimation loop on F1 processors) | 0 | 1
+  init_param_int(PARAM_FILTER_USE_MAT_EXP, "FILTER_MAT_EXP", 1); // 1 - Use matrix exponential to improve gyro integration (adds ~90 us to estimation loop in F1 processors) 0 - use euler integration | 0 | 1
   init_param_int(PARAM_FILTER_USE_ACC, "FILTER_USE_ACC", 1);  // Use accelerometer to correct gyro integration drift (adds ~70 us to estimation loop) | 0 | 1
 
   init_param_int(PARAM_CALIBRATE_GYRO_ON_ARM, "CAL_GYRO_ARM", false); // True if desired to calibrate gyros on arm | 0 | 1
 
   init_param_float(PARAM_GYRO_ALPHA, "GYRO_LPF_ALPHA", 0.3f); // Low-pass filter constant - See estimator documentation | 0 | 1.0
-  init_param_float(PARAM_ACC_ALPHA, "ACC_LPF_ALPHA", 0.3f); // Low-pass filter constant - See estimator documentation | 0 | 1.0
+  init_param_float(PARAM_ACC_ALPHA, "ACC_LPF_ALPHA", 0.5f); // Low-pass filter constant - See estimator documentation | 0 | 1.0
 
   init_param_float(PARAM_GYRO_X_BIAS, "GYRO_X_BIAS", 0.0f); // Constant x-bias of gyroscope readings | -1.0 | 1.0
   init_param_float(PARAM_GYRO_Y_BIAS, "GYRO_Y_BIAS", 0.0f); // Constant y-bias of gyroscope readings | -1.0 | 1.0
@@ -225,7 +225,7 @@ void Params::set_defaults(void)
 
   init_param_float(PARAM_RC_OVERRIDE_DEVIATION, "RC_OVRD_DEV", 0.1); // RC stick deviation from center for overrride | 0.0 | 1.0
   init_param_int(PARAM_OVERRIDE_LAG_TIME, "OVRD_LAG_TIME", 1000); // RC stick deviation lag time before returning control (ms) | 0 | 100000
-  init_param_int(PARAM_RC_OVERRIDE_TAKE_MIN_THROTTLE, "MIN_THROTTLE", false); // Take minimum throttle between RC and computer at all times | 0 | 1
+  init_param_int(PARAM_RC_OVERRIDE_TAKE_MIN_THROTTLE, "MIN_THROTTLE", true); // Take minimum throttle between RC and computer at all times | 0 | 1
 
   init_param_int(PARAM_RC_ATTITUDE_MODE, "RC_ATT_MODE", 1); // Attitude mode for RC sticks (0: rate, 1: angle). Overridden if RC_ATT_CTRL_CHN is set. | 0 | 1
   init_param_float(PARAM_RC_MAX_ROLL, "RC_MAX_ROLL", 0.786f); // Maximum roll angle command sent by full deflection of RC sticks | 0.0 | 3.14159
@@ -237,12 +237,17 @@ void Params::set_defaults(void)
   /***************************/
   /*** FRAME CONFIGURATION ***/
   /***************************/
-  init_param_int(PARAM_MIXER, "MIXER", Mixer::INVALID_MIXER); // Which mixer to choose - See Mixer documentation | 0 | 5
+  init_param_int(PARAM_MIXER, "MIXER", Mixer::INVALID_MIXER); // Which mixer to choose - See Mixer documentation | 0 | 10
 
   init_param_int(PARAM_FIXED_WING, "FIXED_WING", false); // switches on passthrough commands for fixedwing operation | 0 | 1
   init_param_int(PARAM_ELEVATOR_REVERSE, "ELEVATOR_REV", 0); // reverses elevator servo output | 0 | 1
   init_param_int(PARAM_AILERON_REVERSE, "AIL_REV", 0); // reverses aileron servo output | 0 | 1
   init_param_int(PARAM_RUDDER_REVERSE, "RUDDER_REV", 0); // reverses rudder servo output | 0 | 1
+
+  init_param_float(PARAM_FC_ROLL, "FC_ROLL", 0.0f); // roll angle (deg) of flight controller wrt to aircraft body | -180 | 180
+  init_param_float(PARAM_FC_PITCH, "FC_PITCH", 0.0f); // pitch angle (deg) of flight controller wrt to aircraft body | -180 | 180
+  init_param_float(PARAM_FC_YAW, "FC_YAW", 0.0f); // yaw angle (deg) of flight controller wrt to aircraft body | -180 | 180
+
 
   /********************/
   /*** ARMING SETUP ***/
@@ -313,7 +318,7 @@ uint16_t Params::lookup_param_id(const char name[PARAMS_NAME_LENGTH])
     }
 
     if (match)
-      return (uint16_t) id;
+      return id;
   }
 
   return PARAMS_COUNT;
@@ -321,11 +326,11 @@ uint16_t Params::lookup_param_id(const char name[PARAMS_NAME_LENGTH])
 
 bool Params::set_param_int(uint16_t id, int32_t value)
 {
-  if (id < PARAMS_COUNT && value != params.values[id])
+  if (id < PARAMS_COUNT && value != params.values[id].ivalue)
   {
-    params.values[id] = value;
+    params.values[id].ivalue = value;
     change_callback(id);
-    RF_.mavlink_.update_param(id);
+    RF_.comm_manager_.send_param_value(id);
     return true;
   }
   return false;
@@ -333,7 +338,14 @@ bool Params::set_param_int(uint16_t id, int32_t value)
 
 bool Params::set_param_float(uint16_t id, float value)
 {
-  return set_param_int(id, *(int32_t *) &value);
+  if (id < PARAMS_COUNT && value != params.values[id].fvalue)
+  {
+    params.values[id].fvalue = value;
+    change_callback(id);
+    RF_.comm_manager_.send_parameter_list();
+    return true;
+  }
+  return false;
 }
 
 bool Params::set_param_by_name_int(const char name[PARAMS_NAME_LENGTH], int32_t value)
@@ -344,6 +356,6 @@ bool Params::set_param_by_name_int(const char name[PARAMS_NAME_LENGTH], int32_t 
 
 bool Params::set_param_by_name_float(const char name[PARAMS_NAME_LENGTH], float value)
 {
-  return set_param_by_name_int(name, *(int32_t *) &value);
+  return set_param_by_name_int(name, reinterpret_cast<int32_t &>(value));
 }
 }
