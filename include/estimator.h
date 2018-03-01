@@ -35,8 +35,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <map>
 
 #include <turbomath/turbomath.h>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace rosflight_firmware
 {
@@ -65,28 +69,88 @@ public:
   void run();
   void reset_state();
   void reset_adaptive_bias();
+  
+  typedef enum {
+    ACC
+  } measurement_type_t;
 
-private:
   const turbomath::Vector g_ = {0.0f, 0.0f, -1.0f};
 
   ROSflight& RF_;
   State state_;
-
-  uint64_t last_time_;
-  uint64_t last_acc_update_us_;
-
-  turbomath::Vector w1_;
-  turbomath::Vector w2_;
-
-  turbomath::Vector bias_;
+  
+  enum {
+    xATT = 0,
+    xB_G = 4,
+    xZ = 7
+  };
+  
+  enum {
+    dxATT = 0,
+    dxB_G = 3,
+    dxZ = 6
+  };
+  
+  enum {
+    uG = 0,
+    uZ = 3
+  };
+  
+  typedef Eigen::Matrix<float, xZ, 1> xVector;
+  typedef Eigen::Matrix<float, dxZ, 1> dxVector;
+  typedef Eigen::Matrix<float, dxZ, dxZ> dxMatrix;
+  typedef Eigen::Matrix<float, dxZ, uZ> dxuMatrix;
+  typedef Eigen::Matrix<float, uZ, 1> uVector;
+  typedef Eigen::Matrix<float, uZ, uZ> uMatrix;
+  typedef Eigen::Matrix<float, 3, 1> hVector;
+  typedef Eigen::Matrix<float, 3, dxZ> HMatrix;
+  
+  typedef void (Estimator::*measurement_function_ptr)(const xVector& x, hVector& h, HMatrix& H) const;
+  
+  
+private:
+  // State, Covariance and Process Noise Matrices
+  xVector x_;
+  uVector u_;
+  dxMatrix P_;
+  dxVector Qx_;
+  uVector Qu_;
+  
+  // Matrix Workspace
+  dxMatrix A_;
+  dxuMatrix G_;
+  dxVector dx_;
+  xVector xp_;
+  Eigen::Matrix<float, dxZ, 3>  K_;
+  hVector zhat_;
+  hVector z_;
+  HMatrix H_;
+  hVector R_acc_;
+  Eigen::Matrix<float, 4, 1> q1_;
+  
+  uint64_t prev_t_us_;
+  float dt_;
+  
+  const dxMatrix I_big_ = dxMatrix::Identity();
 
   turbomath::Vector accel_LPF_;
   turbomath::Vector gyro_LPF_;
 
-  turbomath::Vector w_acc_;
-
   void run_LPF();
+  
+public:
+  void dynamics(const xVector &x, const uVector &u, dxVector &xdot, dxMatrix &dfdx, dxuMatrix &dfdu);
+  void dynamics(const xVector& x, const uVector &u);
+  void boxplus(const xVector& x, const dxVector& dx, xVector& out);
+  bool update(const hVector& z, const measurement_type_t& meas_type, const Eigen::Matrix3f &R);
+  void h_acc(const xVector& x, hVector& h, HMatrix& H) const;
 };
+
+static std::map<Estimator::measurement_type_t, Estimator::measurement_function_ptr> measurement_functions = [] {
+  std::map<Estimator::measurement_type_t, Estimator::measurement_function_ptr> tmp;
+  tmp[Estimator::ACC] = &Estimator::h_acc;
+  return tmp;
+}();
 
 } // namespace rosflight_firmware
 
