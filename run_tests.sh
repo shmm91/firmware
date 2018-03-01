@@ -16,10 +16,10 @@ function print_result() {
   echo ""
 }
 
-echo_blue "Test 1: Build F1 firmware"
-make clean BOARD=NAZE
-make BOARD=NAZE
-print_result $?
+#echo_blue "Test 1: Build F1 firmware"
+#make clean BOARD=NAZE
+#make BOARD=NAZE
+#print_result $?
 
 echo_blue "Test 2: Build F4 firmware"
 make clean BOARD=REVO
