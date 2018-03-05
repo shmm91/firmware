@@ -88,11 +88,12 @@ void Revo::clock_delay(uint32_t milliseconds)
 void Revo::serial_init(uint32_t baud_rate)
 {
 
-    uint8_t message[6]="init ";
-    vcp_.write(message,5);
+  uint8_t message[6]="init ";
+  vcp_.write(message,5);
   uart_.init(&uart_config[0], 115200);
   uint8_t hello[6]="hello";
   vcp_.init();
+  vcp_.set_baud_rate(baud_rate);
   uart_.write(hello,6);
   vcp_.write(hello,6);
   delay(200);
@@ -109,7 +110,7 @@ void Revo::serial_write(const uint8_t *src, size_t len)
     vcp_.write(src,len);
     vcp_.write(message2,2);
   current_serial_->write(src, len);
-  volatile uint8_t value=*(src+1);
+  //volatile uint8_t value=*(src+1);
   delay(200);
   //For testing only
   //vcp_.write(src,len);
@@ -259,6 +260,11 @@ void Revo::rc_init(rc_type_t rc_type)
     rc_ = &rc_ppm_;
     break;
   }*/
+    //To avoid unused variable warning
+    if(rc_type)
+    {
+
+    }
     rc_ppm_.init(&pwm_config[RC_PPM_PIN]);
     rc_ = &rc_ppm_;
     //END TESTING
