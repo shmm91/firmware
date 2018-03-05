@@ -64,6 +64,7 @@ void Revo::init_board(void)
 
 void Revo::board_reset(bool bootloader)
 {
+  (void)bootloader;
   NVIC_SystemReset();
 }
 
@@ -253,6 +254,7 @@ void Revo::rc_init(rc_type_t rc_type)
     rc_ = &rc_sbus_;
     break;
   case RC_TYPE_PPM:
+  default:
     rc_ppm_.init(&pwm_config[RC_PPM_PIN]);
     rc_ = &rc_ppm_;
     break;
@@ -297,9 +299,9 @@ bool Revo::memory_read(void * data, size_t len)
   return flash_.read_config((uint8_t*)data, len);
 }
 
-bool Revo::memory_write(const void * data, size_t len)
+bool Revo::memory_write(void * data, size_t len)
 {
-  return flash_.write_config((uint8_t*)data, len);
+  return flash_.write_config(reinterpret_cast<uint8_t*>(data), len);
 }
 
 // LED
