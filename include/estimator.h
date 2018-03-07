@@ -146,12 +146,6 @@ public:
   void h_acc(const xVector& x, hVector& h, HMatrix& H) const;
 };
 
-static std::map<Estimator::measurement_type_t, Estimator::measurement_function_ptr> measurement_functions = [] {
-  std::map<Estimator::measurement_type_t, Estimator::measurement_function_ptr> tmp;
-  tmp[Estimator::ACC] = &Estimator::h_acc;
-  return tmp;
-}();
-
 } // namespace rosflight_firmware
 
 #endif // ROSFLIGHT_FIRMWARE_ESTIMATOR_H

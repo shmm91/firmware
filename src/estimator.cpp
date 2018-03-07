@@ -48,6 +48,11 @@ static const Eigen::Vector3f gravity = [] {
   return tmp;
 }();
 
+static std::map<Estimator::measurement_type_t, Estimator::measurement_function_ptr> measurement_functions = [] {
+  std::map<Estimator::measurement_type_t, Estimator::measurement_function_ptr> tmp;
+  tmp[Estimator::ACC] = &Estimator::h_acc;
+  return tmp;
+}();
 
 Eigen::Matrix3f skew(const Eigen::Vector3f v)
 {
@@ -177,10 +182,14 @@ void Estimator::run()
   
   // Perform Accelerometer Measurement Update
   z_ << accel_LPF_.x, accel_LPF_.y, accel_LPF_.z;
-  z_ *= 9.80665/z_.norm();
-  update(z_, ACC, R_acc_.asDiagonal());
+  float z_norm = z_.norm();
+  if (z_norm < 1.15*9.80665 && z_norm > 0.85 * 9.80665)
+  {
+    z_ *= 9.80665/z_.norm();
+    update(z_, ACC, R_acc_.asDiagonal());
+  }
   
-  // Clean up the quatenrion state
+  // Clean up the quaternion state
   x_.block<4,1>(xATT, 0) /= x_.block<4,1>(xATT, 0).norm();
   
   // Copy relvant data into state object for publishing to other modules
