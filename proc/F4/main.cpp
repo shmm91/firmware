@@ -29,15 +29,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "naze32.h"
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
+#include "f4.h"
 #include "rosflight.h"
 #include "mavlink.h"
 
 int main(void)
 {
-  rosflight_firmware::Naze32 board;
+  rosflight_firmware::F4Board board;
   rosflight_firmware::Mavlink mavlink(board);
   rosflight_firmware::ROSflight firmware(board, mavlink);
+  board.init_board();
 
   firmware.init();
 
@@ -47,3 +51,5 @@ int main(void)
   }
   return 0;
 }
+
+#pragma GCC pop_options

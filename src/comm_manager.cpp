@@ -28,7 +28,11 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <cstdint>
+
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
+#include <stdint.h>
 
 #include "rosflight.h"
 
@@ -511,3 +515,5 @@ void CommManager::Stream::set_rate(uint32_t rate_hz)
 //}
 
 } // namespace rosflight_firmware
+
+#pragma GCC pop_options

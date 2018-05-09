@@ -29,17 +29,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "revo.h"
+#include "f1.h"
 #include "rosflight.h"
 #include "mavlink.h"
 
-
 int main(void)
 {
-  static rosflight_firmware::Revo board;
-  static rosflight_firmware::Mavlink mavlink(board);
-  static rosflight_firmware::ROSflight firmware(board, mavlink);
+  rosflight_firmware::F1Board board;
   board.init_board();
+  rosflight_firmware::Mavlink mavlink(board);
+  rosflight_firmware::ROSflight firmware(board, mavlink);
 
   firmware.init();
 
@@ -49,4 +48,3 @@ int main(void)
   }
   return 0;
 }
-
