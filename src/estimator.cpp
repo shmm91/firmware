@@ -245,7 +245,7 @@ void Estimator::boxplus(const xVector& x, const dxVector& dx, xVector& out)
   
 }
 
-bool Estimator::update(const hVector& z, const measurement_type_t& meas_type, const Eigen::Matrix3f& R)
+void Estimator::update(const hVector& z, const measurement_type_t& meas_type, const Eigen::Matrix3f& R)
 {
   // Call the appropriate measurement function
   (this->*(measurement_functions[meas_type]))(x_, zhat_, H_);
@@ -256,7 +256,7 @@ bool Estimator::update(const hVector& z, const measurement_type_t& meas_type, co
   K_ = P_ * H_.transpose() * (R + H_*P_ * H_.transpose()).inverse();
   
   boxplus(x_, K_*residual, x_);
-  P_ -= K_*H_*P_;  
+  P_ -= K_*H_*P_;
 }
 
 

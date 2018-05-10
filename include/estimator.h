@@ -39,8 +39,17 @@
 
 #include <turbomath/turbomath.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic warning "-Wshadow"
+#pragma GCC diagnostic ignored "-Wshadow"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 
 namespace rosflight_firmware
 {
@@ -142,7 +151,7 @@ public:
   void dynamics(const xVector &x, const uVector &u, dxVector &xdot, dxMatrix &dfdx, dxuMatrix &dfdu);
   void dynamics(const xVector& x, const uVector &u);
   void boxplus(const xVector& x, const dxVector& dx, xVector& out);
-  bool update(const hVector& z, const measurement_type_t& meas_type, const Eigen::Matrix3f &R);
+  void update(const hVector& z, const measurement_type_t& meas_type, const Eigen::Matrix3f &R);
   void h_acc(const xVector& x, hVector& h, HMatrix& H) const;
 };
 

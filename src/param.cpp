@@ -357,7 +357,9 @@ bool Params::set_param_by_name_int(const char name[PARAMS_NAME_LENGTH], int32_t 
 
 bool Params::set_param_by_name_float(const char name[PARAMS_NAME_LENGTH], float value)
 {
-  return set_param_by_name_int(name, reinterpret_cast<int32_t &>(value));
+  int32_t tmp;
+  memcpy(&tmp, &value, sizeof(value));
+  return set_param_by_name_int(name, tmp);
 }
 }
 
