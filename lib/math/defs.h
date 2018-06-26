@@ -19,6 +19,6 @@ typedef Eigen::Matrix<f_t, 3, 3> Mat33;
 #define DEG2RAD 0.01745327
 #define RAD2DEG 57.295827
 
-}
+} // namespace rosflight_math
 
 #endif // ROSFLIGHT_FIRMWARE_MATH_DEFS_H

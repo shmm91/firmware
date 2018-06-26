@@ -4,11 +4,12 @@
 #include <Eigen/Geometry>
 #include <math.h>
 #include <iostream>
-#include <math/defs.h>
+#include <math/math_helper.h>
 
 using namespace Eigen;
 
-namespace rosflight_math {
+namespace rosflight_math
+{
 
 class Quat
 {
@@ -18,7 +19,7 @@ private:
 public:
   Quat() {}
   Quat(Vec4 arr) : arr_(arr) {}
-  Quat(float w, float x, float y, float z) : arr_(w, x, y, z) {}
+  Quat(f_t w, f_t x, f_t y, f_t z) : arr_(w, x, y, z) {}
 
   Vec4 arr_;
   
@@ -51,15 +52,6 @@ public:
   }
 
   Vec3 operator- (const Quat q) {return boxminus(q);}
-
-  static Mat33 skew(const Vec3 v)
-  {
-    static Mat33 skew_mat;
-    skew_mat << 0.0, -v(2), v(1),
-                v(2), 0.0, -v(0),
-                -v(1), v(0), 0.0;
-    return skew_mat;
-  }
 
   static Quat exp(const Vec3 v)
   {
@@ -333,5 +325,5 @@ inline std::ostream& operator<< (std::ostream& os, const Quat& q)
   return os;
 }
 
-}
+} // namespace rosflight_math
 
