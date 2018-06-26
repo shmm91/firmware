@@ -71,9 +71,9 @@ private:
   {
   public:
     PID();
-    void init(float kp, float ki, float kd, float max, float min, float tau);
-    float run(float dt, float x, float x_c, bool update_integrator);
-    float run(float dt, float x, float x_c, bool update_integrator, float xdot);
+    void init(const float kp, const float ki, const float kd, const float max, const float min, const float tau);
+    float run(const float dt, const float x, const float x_c, const bool update_integrator);
+    float run(const float dt, const float x, const float x_c, const bool update_integrator, const float xdot);
 
   private:
     float kp_;
@@ -91,7 +91,7 @@ private:
 
   ROSflight& RF_;
 
-  turbomath::Vector run_pid_loops(uint32_t dt, const Estimator::State& state, const control_t& command, bool update_integrators);
+  Vec3 run_pid_loops(uint32_t dt, const Estimator::State& state, const control_t& command, bool update_integrators);
 
   Output output_;
 

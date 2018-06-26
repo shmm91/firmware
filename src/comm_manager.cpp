@@ -332,7 +332,7 @@ void CommManager::send_attitude(void)
 
 void CommManager::send_imu(void)
 {
-  turbomath::Vector acc, gyro;
+  Vec3 acc, gyro;
   uint64_t stamp_us;
   RF_.sensors_.get_filtered_IMU(acc, gyro, stamp_us);
   comm_link_.send_imu(sysid_,

@@ -36,245 +36,245 @@
 namespace turbomath
 {
 
-Vector::Vector() : x(0.0f), y(0.0f), z(0.0f)
-{}
+//Vector::Vector() : x(0.0f), y(0.0f), z(0.0f)
+//{}
 
-Vector::Vector(float x_, float y_, float z_) : x(x_), y(y_), z(z_)
-{}
-
-
-float Vector::norm() const
-{
-  return 1.0f/inv_sqrt(x*x + y*y + z*z);
-}
+//Vector::Vector(float x_, float y_, float z_) : x(x_), y(y_), z(z_)
+//{}
 
 
-float Vector::sqrd_norm() const
-{
-  return x*x + y*y + z*z;
-}
+//float Vector::norm() const
+//{
+//  return 1.0f/inv_sqrt(x*x + y*y + z*z);
+//}
 
 
-Vector& Vector::normalize()
-{
-  float recip_norm = inv_sqrt(x*x + y*y + z*z);
-  x *= recip_norm;
-  y *= recip_norm;
-  z *= recip_norm;
-  return *this;
-}
+//float Vector::sqrd_norm() const
+//{
+//  return x*x + y*y + z*z;
+//}
 
 
-Vector Vector::normalized() const
-{
-  float recip_norm = inv_sqrt(x*x + y*y + z*z);
-  Vector out(x*recip_norm, y*recip_norm, z*recip_norm);
-  return out;
-}
+//Vector& Vector::normalize()
+//{
+//  float recip_norm = inv_sqrt(x*x + y*y + z*z);
+//  x *= recip_norm;
+//  y *= recip_norm;
+//  z *= recip_norm;
+//  return *this;
+//}
 
 
-Vector Vector::operator+(const Vector& v) const
-{
-  return Vector(x + v.x, y + v.y, z + v.z);
-}
+//Vector Vector::normalized() const
+//{
+//  float recip_norm = inv_sqrt(x*x + y*y + z*z);
+//  Vector out(x*recip_norm, y*recip_norm, z*recip_norm);
+//  return out;
+//}
 
 
-Vector Vector::operator-(const Vector& v) const
-{
-  return Vector(x - v.x, y - v.y, z - v.z);
-}
+//Vector Vector::operator+(const Vector& v) const
+//{
+//  return Vector(x + v.x, y + v.y, z + v.z);
+//}
 
 
-Vector& Vector::operator +=(const Vector& v)
-{
-  x += v.x;
-  y += v.y;
-  z += v.z;
-  return *this;
-}
+//Vector Vector::operator-(const Vector& v) const
+//{
+//  return Vector(x - v.x, y - v.y, z - v.z);
+//}
 
 
-Vector& Vector::operator -=(const Vector& v)
-{
-  x -= v.x;
-  y -= v.y;
-  z -= v.z;
-  return *this;
-}
+//Vector& Vector::operator +=(const Vector& v)
+//{
+//  x += v.x;
+//  y += v.y;
+//  z += v.z;
+//  return *this;
+//}
 
 
-Vector Vector::operator *(float s) const
-{
-  return Vector(x*s, y*s, z*s);
-}
+//Vector& Vector::operator -=(const Vector& v)
+//{
+//  x -= v.x;
+//  y -= v.y;
+//  z -= v.z;
+//  return *this;
+//}
 
 
-Vector Vector::operator /(float s) const
-{
-  return Vector(x/s, y/s, z/s);
-}
+//Vector Vector::operator *(float s) const
+//{
+//  return Vector(x*s, y*s, z*s);
+//}
 
 
-Vector& Vector::operator *=(float s)
-{
-  x *= s;
-  y *= s;
-  z *= s;
-  return *this;
-}
+//Vector Vector::operator /(float s) const
+//{
+//  return Vector(x/s, y/s, z/s);
+//}
 
 
-Vector& Vector::operator /=(float s)
-{
-  x /= s;
-  y /= s;
-  z /= s;
-  return *this;
-}
+//Vector& Vector::operator *=(float s)
+//{
+//  x *= s;
+//  y *= s;
+//  z *= s;
+//  return *this;
+//}
 
 
-float Vector::dot(const Vector& v) const
-{
-  return x*v.x + y*v.y + z*v.z;
-}
+//Vector& Vector::operator /=(float s)
+//{
+//  x /= s;
+//  y /= s;
+//  z /= s;
+//  return *this;
+//}
 
 
-Vector Vector::cross(const Vector& v) const
-{
-  return Vector( y * v.z - z * v.y,
-                 z * v.x - x * v.z,
-                 x * v.y - y * v.x);
-}
+//float Vector::dot(const Vector& v) const
+//{
+//  return x*v.x + y*v.y + z*v.z;
+//}
 
-Quaternion::Quaternion() : w(1.0f), x(0.0f), y(0.0f), z(0.0f)
-{}
 
-Quaternion::Quaternion(float w_, float x_, float y_, float z_) : w(w_), x(x_), y(y_), z(z_)
-{}
+//Vector Vector::cross(const Vector& v) const
+//{
+//  return Vector( y * v.z - z * v.y,
+//                 z * v.x - x * v.z,
+//                 x * v.y - y * v.x);
+//}
 
-Quaternion::Quaternion(const Vector& u, const Vector& v)
-{
-  from_two_unit_vectors(u, v);
-}
+//Quaternion::Quaternion() : w(1.0f), x(0.0f), y(0.0f), z(0.0f)
+//{}
 
-Quaternion::Quaternion(float roll, float pitch, float yaw)
-{
-  from_RPY(roll, pitch, yaw);
-}
+//Quaternion::Quaternion(float w_, float x_, float y_, float z_) : w(w_), x(x_), y(y_), z(z_)
+//{}
 
-Quaternion& Quaternion::normalize()
-{
-  float recip_norm = inv_sqrt(w*w + x*x + y*y + z*z);
-  w *= recip_norm;
-  x *= recip_norm;
-  y *= recip_norm;
-  z *= recip_norm;
+//Quaternion::Quaternion(const Vector& u, const Vector& v)
+//{
+//  from_two_unit_vectors(u, v);
+//}
 
-  // Make sure the quaternion is canonical (w is always positive)
-  if (w < 0.0f)
-  {
-    w *= -1.0f;
-    x *= -1.0f;
-    y *= -1.0f;
-    z *= -1.0f;
-  }
+//Quaternion::Quaternion(float roll, float pitch, float yaw)
+//{
+//  from_RPY(roll, pitch, yaw);
+//}
 
-  return *this;
-}
+//Quaternion& Quaternion::normalize()
+//{
+//  float recip_norm = inv_sqrt(w*w + x*x + y*y + z*z);
+//  w *= recip_norm;
+//  x *= recip_norm;
+//  y *= recip_norm;
+//  z *= recip_norm;
 
-Quaternion Quaternion::operator *(const Quaternion& q) const
-{
-  return Quaternion(w*q.w - x*q.x - y*q.y - z*q.z,
-                    w*q.x + x*q.w - y*q.z + z*q.y,
-                    w*q.y + x*q.z + y*q.w - z*q.x,
-                    w*q.z - x*q.y + y*q.x + z*q.w);
-}
+//  // Make sure the quaternion is canonical (w is always positive)
+//  if (w < 0.0f)
+//  {
+//    w *= -1.0f;
+//    x *= -1.0f;
+//    y *= -1.0f;
+//    z *= -1.0f;
+//  }
 
-Quaternion& Quaternion::operator *=(const Quaternion& q)
-{
-  w = w*q.w - x*q.x - y*q.y - z*q.z;
-  x = w*q.x + x*q.w - y*q.z + z*q.y;
-  y = w*q.y + x*q.z + y*q.w - z*q.x;
-  z = w*q.z - x*q.y + y*q.x + z*q.w;
-  return *this;
-}
+//  return *this;
+//}
 
-Vector Quaternion::rotate(const Vector& v) const
-{
-  return Vector((1.0f - 2.0f*y*y - 2.0f*z*z) * v.x + (2.0f*(x*y + w*z))*v.y + 2.0f*(x*z - w*y)*v.z,
-                (2.0f*(x*y - w*z)) * v.x + (1.0f - 2.0f*x*x - 2.0f*z*z) * v.y + 2.0f*(y*z + w*x)*v.z,
-                (2.0f*(x*z + w*y)) * v.x + 2.0f*(y*z - w*x)*v.y + (1.0f - 2.0f*x*x - 2.0f*y*y)*v.z);
-}
+//Quaternion Quaternion::operator *(const Quaternion& q) const
+//{
+//  return Quaternion(w*q.w - x*q.x - y*q.y - z*q.z,
+//                    w*q.x + x*q.w - y*q.z + z*q.y,
+//                    w*q.y + x*q.z + y*q.w - z*q.x,
+//                    w*q.z - x*q.y + y*q.x + z*q.w);
+//}
 
-Vector Quaternion::operator *(const Vector& v) const
-{
-  return rotate(v);
-}
+//Quaternion& Quaternion::operator *=(const Quaternion& q)
+//{
+//  w = w*q.w - x*q.x - y*q.y - z*q.z;
+//  x = w*q.x + x*q.w - y*q.z + z*q.y;
+//  y = w*q.y + x*q.z + y*q.w - z*q.x;
+//  z = w*q.z - x*q.y + y*q.x + z*q.w;
+//  return *this;
+//}
 
-Quaternion Quaternion::inverse() const
-{
-  return Quaternion(w, -x, -y, -z);
-}
+//Vector Quaternion::rotate(const Vector& v) const
+//{
+//  return Vector((1.0f - 2.0f*y*y - 2.0f*z*z) * v.x + (2.0f*(x*y + w*z))*v.y + 2.0f*(x*z - w*y)*v.z,
+//                (2.0f*(x*y - w*z)) * v.x + (1.0f - 2.0f*x*x - 2.0f*z*z) * v.y + 2.0f*(y*z + w*x)*v.z,
+//                (2.0f*(x*z + w*y)) * v.x + 2.0f*(y*z - w*x)*v.y + (1.0f - 2.0f*x*x - 2.0f*y*y)*v.z);
+//}
 
-Quaternion& Quaternion::invert()
-{
-  x *= -1.0f;
-  y *= -1.0f;
-  z *= -1.0f;
-  return *this;
-}
+//Vector Quaternion::operator *(const Vector& v) const
+//{
+//  return rotate(v);
+//}
 
-Quaternion& Quaternion::from_two_unit_vectors(const Vector& u, const Vector& v)
-{
-  // Adapted From the Ogre3d source code
-  // https://bitbucket.org/sinbad/ogre/src/9db75e3ba05c/OgreMain/include/OgreVector3.h?fileviewer=file-view-default#cl-651
-  float d = u.dot(v);
-  if (d >= 1.0f)
-  {
-    w = 1.0f;
-    x = 0.0f;
-    y = 0.0f;
-    z = 0.0f;
-    return *this;
-  }
-  else
-  {
-    float invs = inv_sqrt(2.0f*(1.0f+d));
-    Vector xyz = u.cross(v)*invs;
-    w = 0.5f/invs;
-    x = xyz.x;
-    y = xyz.y;
-    z = xyz.z;
-  }
-  normalize();
-  return *this;
-}
+//Quaternion Quaternion::inverse() const
+//{
+//  return Quaternion(w, -x, -y, -z);
+//}
 
-Quaternion& Quaternion::from_RPY(float roll, float pitch, float yaw)
-{
-  // p 259 of "Small unmanned aircraft: Theory and Practice" by Randy Beard and Tim McLain
-  float cp = turbomath::cos(roll/2.0);
-  float sp = turbomath::sin(roll/2.0);
-  float ct = turbomath::cos(pitch/2.0);
-  float st = turbomath::sin(pitch/2.0);
-  float cs = turbomath::cos(yaw/2.0);
-  float ss = turbomath::sin(yaw/2.0);
+//Quaternion& Quaternion::invert()
+//{
+//  x *= -1.0f;
+//  y *= -1.0f;
+//  z *= -1.0f;
+//  return *this;
+//}
 
-  w = cs*ct*cp + ss*st*sp;
-  x = cs*ct*sp - ss*st*cp;
-  y = cs*st*cp + ss*ct*sp;
-  z = ss*ct*cp - cs*st*sp;
+//Quaternion& Quaternion::from_two_unit_vectors(const Vector& u, const Vector& v)
+//{
+//  // Adapted From the Ogre3d source code
+//  // https://bitbucket.org/sinbad/ogre/src/9db75e3ba05c/OgreMain/include/OgreVector3.h?fileviewer=file-view-default#cl-651
+//  float d = u.dot(v);
+//  if (d >= 1.0f)
+//  {
+//    w = 1.0f;
+//    x = 0.0f;
+//    y = 0.0f;
+//    z = 0.0f;
+//    return *this;
+//  }
+//  else
+//  {
+//    float invs = inv_sqrt(2.0f*(1.0f+d));
+//    Vector xyz = u.cross(v)*invs;
+//    w = 0.5f/invs;
+//    x = xyz.x;
+//    y = xyz.y;
+//    z = xyz.z;
+//  }
+//  normalize();
+//  return *this;
+//}
 
-  normalize();
-  return *this;
-}
+//Quaternion& Quaternion::from_RPY(float roll, float pitch, float yaw)
+//{
+//  // p 259 of "Small unmanned aircraft: Theory and Practice" by Randy Beard and Tim McLain
+//  float cp = turbomath::cos(roll/2.0);
+//  float sp = turbomath::sin(roll/2.0);
+//  float ct = turbomath::cos(pitch/2.0);
+//  float st = turbomath::sin(pitch/2.0);
+//  float cs = turbomath::cos(yaw/2.0);
+//  float ss = turbomath::sin(yaw/2.0);
 
-void Quaternion::get_RPY(float *roll, float *pitch, float *yaw) const
-{
-  *roll = turbomath::atan2(2.0f * (w*x + y*z), 1.0f - 2.0f * (x*x + y*y));
-  *pitch = turbomath::asin(2.0f*(w*y - z*x));
-  *yaw = turbomath::atan2(2.0f * (w*z + x*y), 1.0f - 2.0f * (y*y + z*z));
-}
+//  w = cs*ct*cp + ss*st*sp;
+//  x = cs*ct*sp - ss*st*cp;
+//  y = cs*st*cp + ss*ct*sp;
+//  z = ss*ct*cp - cs*st*sp;
+
+//  normalize();
+//  return *this;
+//}
+
+//void Quaternion::get_RPY(float *roll, float *pitch, float *yaw) const
+//{
+//  *roll = turbomath::atan2(2.0f * (w*x + y*z), 1.0f - 2.0f * (x*x + y*y));
+//  *pitch = turbomath::asin(2.0f*(w*y - z*x));
+//  *yaw = turbomath::atan2(2.0f * (w*z + x*y), 1.0f - 2.0f * (y*y + z*z));
+//}
 
 
 

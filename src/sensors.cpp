@@ -38,6 +38,9 @@
 #include "rosflight.h"
 
 #include <turbomath/turbomath.h>
+#include <math/defs.h>
+
+using namespace rosflight_math;
 
 namespace rosflight_firmware
 {
@@ -87,10 +90,10 @@ void Sensors::init()
 void Sensors::init_imu()
 {
   // Quaternion to compensate for FCU orientation
-  float roll = rf_.params_.get_param_float(PARAM_FC_ROLL) * 0.017453293;
-  float pitch = rf_.params_.get_param_float(PARAM_FC_PITCH) * 0.017453293;
-  float yaw = rf_.params_.get_param_float(PARAM_FC_YAW) * 0.017453293;
-  data_.fcu_orientation = turbomath::Quaternion(roll, pitch, yaw);
+  float roll = rf_.params_.get_param_float(PARAM_FC_ROLL) * DEG2RAD;
+  float pitch = rf_.params_.get_param_float(PARAM_FC_PITCH) * DEG2RAD;
+  float yaw = rf_.params_.get_param_float(PARAM_FC_YAW) * DEG2RAD;
+  data_.fcu_orientation = Quat::from_euler(roll, pitch, yaw);
 
   // See if the IMU is uncalibrated, and throw an error if it is
   if (rf_.params_.get_param_float(PARAM_ACC_X_BIAS) == 0.0 && rf_.params_.get_param_float(PARAM_ACC_Y_BIAS) == 0.0 &&
@@ -151,9 +154,9 @@ void Sensors::update_other_sensors()
       float mag[3];
       rf_.board_.mag_update();
       rf_.board_.mag_read(mag);
-      data_.mag.x = mag[0];
-      data_.mag.y = mag[1];
-      data_.mag.z = mag[2];
+      data_.mag.x() = mag[0];
+      data_.mag.y() = mag[1];
+      data_.mag.z() = mag[2];
       correct_mag();
     }
     break;
@@ -279,17 +282,17 @@ bool Sensors::update_imu(void)
       return false;
 
     // Move data into local copy
-    data_.accel.x = accel_[0];
-    data_.accel.y = accel_[1];
-    data_.accel.z = accel_[2];
+    data_.accel.x() = accel_[0];
+    data_.accel.y() = accel_[1];
+    data_.accel.z() = accel_[2];
 
-    data_.accel = data_.fcu_orientation * data_.accel;
+    data_.accel = data_.fcu_orientation.rotp(data_.accel);
 
-    data_.gyro.x = gyro_[0];
-    data_.gyro.y = gyro_[1];
-    data_.gyro.z = gyro_[2];
+    data_.gyro.x() = gyro_[0];
+    data_.gyro.y() = gyro_[1];
+    data_.gyro.z() = gyro_[2];
 
-    data_.gyro = data_.fcu_orientation * data_.gyro;
+    data_.gyro = data_.fcu_orientation.rotp(data_.gyro);
 
     if (calibrating_acc_flag_)
       calibrate_accel();
@@ -329,7 +332,7 @@ bool Sensors::update_imu(void)
 }
 
 
-void Sensors::get_filtered_IMU(turbomath::Vector &accel, turbomath::Vector &gyro, uint64_t &stamp_us)
+void Sensors::get_filtered_IMU(Vec3 &accel, Vec3 &gyro, uint64_t &stamp_us)
 {
   float delta_t = (data_.imu_time - int_start_us_)*1e-6;
   accel = accel_int_ / delta_t;
@@ -350,13 +353,13 @@ void Sensors::calibrate_gyro()
   if (gyro_calibration_count_ > 1000)
   {
     // Gyros are simple.  Just find the average during the calibration
-    turbomath::Vector gyro_bias = gyro_sum_ / static_cast<float>(gyro_calibration_count_);
+    Vec3 gyro_bias = gyro_sum_ / static_cast<float>(gyro_calibration_count_);
 
     if (gyro_bias.norm() < 1.0)
     {
-      rf_.params_.set_param_float(PARAM_GYRO_X_BIAS, gyro_bias.x);
-      rf_.params_.set_param_float(PARAM_GYRO_Y_BIAS, gyro_bias.y);
-      rf_.params_.set_param_float(PARAM_GYRO_Z_BIAS, gyro_bias.z);
+      rf_.params_.set_param_float(PARAM_GYRO_X_BIAS, gyro_bias.x());
+      rf_.params_.set_param_float(PARAM_GYRO_Y_BIAS, gyro_bias.y());
+      rf_.params_.set_param_float(PARAM_GYRO_Z_BIAS, gyro_bias.z());
 
       // Tell the estimator to reset it's bias estimate, because it should be zero now
       rf_.estimator_.reset_adaptive_bias();
@@ -374,33 +377,16 @@ void Sensors::calibrate_gyro()
     // reset calibration in case we do it again
     calibrating_gyro_flag_ = false;
     gyro_calibration_count_ = 0;
-    gyro_sum_.x = 0.0f;
-    gyro_sum_.y = 0.0f;
-    gyro_sum_.z = 0.0f;
+    gyro_sum_.setZero();
   }
 }
-
-turbomath::Vector vector_max(turbomath::Vector a, turbomath::Vector b)
-{
-  return turbomath::Vector(a.x > b.x ? a.x : b.x,
-                           a.y > b.y ? a.y : b.y,
-                           a.z > b.z ? a.z : b.z);
-}
-
-turbomath::Vector vector_min(turbomath::Vector a, turbomath::Vector b)
-{
-  return turbomath::Vector(a.x < b.x ? a.x : b.x,
-                           a.y < b.y ? a.y : b.y,
-                           a.z < b.z ? a.z : b.z);
-}
-
 
 void Sensors::calibrate_accel(void)
 {
   acc_sum_ = acc_sum_ + data_.accel + gravity_;
   acc_temp_sum_ += data_.imu_temperature;
-  max_ = vector_max(max_, data_.accel);
-  min_ = vector_min(min_, data_.accel);
+  max_ = max_.cwiseMax(data_.accel);
+  min_ = min_.cwiseMin(data_.accel);
   accel_calibration_count_++;
 
   if (accel_calibration_count_ > 1000)
@@ -408,7 +394,7 @@ void Sensors::calibrate_accel(void)
     // The temperature bias is calculated using a least-squares regression.
     // This is computationally intensive, so it is done by the onboard computer in
     // fcu_io and shipped over to the flight controller.
-    turbomath::Vector accel_temp_bias =
+    Vec3 accel_temp_bias =
     {
       rf_.params_.get_param_float(PARAM_ACC_X_TEMP_COMP),
       rf_.params_.get_param_float(PARAM_ACC_Y_TEMP_COMP),
@@ -420,7 +406,7 @@ void Sensors::calibrate_accel(void)
     // Which is why this line is so confusing. What we are doing, is first removing
     // the contribution of temperature to the measurements during the calibration,
     // Then we are dividing by the number of measurements.
-    turbomath::Vector accel_bias = (acc_sum_ - (accel_temp_bias * acc_temp_sum_)) /
+    Vec3 accel_bias = (acc_sum_ - (accel_temp_bias * acc_temp_sum_)) /
         static_cast<float>(accel_calibration_count_);
 
     // Sanity Check -
@@ -439,9 +425,9 @@ void Sensors::calibrate_accel(void)
 
       if (accel_bias.norm() < 3.0)
       {
-        rf_.params_.set_param_float(PARAM_ACC_X_BIAS, accel_bias.x);
-        rf_.params_.set_param_float(PARAM_ACC_Y_BIAS, accel_bias.y);
-        rf_.params_.set_param_float(PARAM_ACC_Z_BIAS, accel_bias.z);
+        rf_.params_.set_param_float(PARAM_ACC_X_BIAS, accel_bias.x());
+        rf_.params_.set_param_float(PARAM_ACC_Y_BIAS, accel_bias.y());
+        rf_.params_.set_param_float(PARAM_ACC_Z_BIAS, accel_bias.z());
         rf_.comm_manager_.log(CommLink::LogSeverity::LOG_INFO, "IMU offsets captured");
 
         // clear uncalibrated IMU flag
@@ -459,16 +445,10 @@ void Sensors::calibrate_accel(void)
 
     // reset calibration counters in case we do it again
     accel_calibration_count_ = 0;
-    acc_sum_.x = 0.0f;
-    acc_sum_.y = 0.0f;
-    acc_sum_.z = 0.0f;
+    acc_sum_.setZero();
     acc_temp_sum_ = 0.0f;
-    max_.x = -1000.0f;
-    max_.y = -1000.0f;
-    max_.z = -1000.0f;
-    min_.x = 1000.0f;
-    min_.y = 1000.0f;
-    min_.z = 1000.0f;
+    max_.setConstant(-1000);
+    min_.setConstant(1000);
   }
 }
 
@@ -551,33 +531,33 @@ void Sensors::calibrate_diff_pressure()
 void Sensors::correct_imu(void)
 {
   // correct according to known biases and temperature compensation
-  data_.accel.x -= rf_.params_.get_param_float(PARAM_ACC_X_TEMP_COMP)*data_.imu_temperature
+  data_.accel.x() -= rf_.params_.get_param_float(PARAM_ACC_X_TEMP_COMP)*data_.imu_temperature
       + rf_.params_.get_param_float(PARAM_ACC_X_BIAS);
-  data_.accel.y -= rf_.params_.get_param_float(PARAM_ACC_Y_TEMP_COMP)*data_.imu_temperature
+  data_.accel.y() -= rf_.params_.get_param_float(PARAM_ACC_Y_TEMP_COMP)*data_.imu_temperature
       + rf_.params_.get_param_float(PARAM_ACC_Y_BIAS);
-  data_.accel.z -= rf_.params_.get_param_float(PARAM_ACC_Z_TEMP_COMP)*data_.imu_temperature
+  data_.accel.z() -= rf_.params_.get_param_float(PARAM_ACC_Z_TEMP_COMP)*data_.imu_temperature
       + rf_.params_.get_param_float(PARAM_ACC_Z_BIAS);
 
-  data_.gyro.x -= rf_.params_.get_param_float(PARAM_GYRO_X_BIAS);
-  data_.gyro.y -= rf_.params_.get_param_float(PARAM_GYRO_Y_BIAS);
-  data_.gyro.z -= rf_.params_.get_param_float(PARAM_GYRO_Z_BIAS);
+  data_.gyro.x() -= rf_.params_.get_param_float(PARAM_GYRO_X_BIAS);
+  data_.gyro.y() -= rf_.params_.get_param_float(PARAM_GYRO_Y_BIAS);
+  data_.gyro.z() -= rf_.params_.get_param_float(PARAM_GYRO_Z_BIAS);
 }
 
 void Sensors::correct_mag(void)
 {
   // correct according to known hard iron bias
-  float mag_hard_x = data_.mag.x - rf_.params_.get_param_float(PARAM_MAG_X_BIAS);
-  float mag_hard_y = data_.mag.y - rf_.params_.get_param_float(PARAM_MAG_Y_BIAS);
-  float mag_hard_z = data_.mag.z - rf_.params_.get_param_float(PARAM_MAG_Z_BIAS);
+  float mag_hard_x = data_.mag.x() - rf_.params_.get_param_float(PARAM_MAG_X_BIAS);
+  float mag_hard_y = data_.mag.y() - rf_.params_.get_param_float(PARAM_MAG_Y_BIAS);
+  float mag_hard_z = data_.mag.z() - rf_.params_.get_param_float(PARAM_MAG_Z_BIAS);
 
   // correct according to known soft iron bias - converts to nT
-  data_.mag.x = rf_.params_.get_param_float(PARAM_MAG_A11_COMP)*mag_hard_x + rf_.params_.get_param_float(
+  data_.mag.x() = rf_.params_.get_param_float(PARAM_MAG_A11_COMP)*mag_hard_x + rf_.params_.get_param_float(
         PARAM_MAG_A12_COMP)*mag_hard_y +
       rf_.params_.get_param_float(PARAM_MAG_A13_COMP)*mag_hard_z;
-  data_.mag.y = rf_.params_.get_param_float(PARAM_MAG_A21_COMP)*mag_hard_x + rf_.params_.get_param_float(
+  data_.mag.y() = rf_.params_.get_param_float(PARAM_MAG_A21_COMP)*mag_hard_x + rf_.params_.get_param_float(
         PARAM_MAG_A22_COMP)*mag_hard_y +
       rf_.params_.get_param_float(PARAM_MAG_A23_COMP)*mag_hard_z;
-  data_.mag.z = rf_.params_.get_param_float(PARAM_MAG_A31_COMP)*mag_hard_x + rf_.params_.get_param_float(
+  data_.mag.z() = rf_.params_.get_param_float(PARAM_MAG_A31_COMP)*mag_hard_x + rf_.params_.get_param_float(
         PARAM_MAG_A32_COMP)*mag_hard_y +
       rf_.params_.get_param_float(PARAM_MAG_A33_COMP)*mag_hard_z;
 }

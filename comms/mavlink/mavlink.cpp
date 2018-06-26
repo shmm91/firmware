@@ -58,19 +58,19 @@ void Mavlink::receive(void)
 
 void Mavlink::send_attitude_quaternion(uint8_t system_id,
                               uint64_t timestamp_us,
-                              const turbomath::Quaternion &attitude,
-                              const turbomath::Vector &angular_velocity)
+                              const Quat &attitude,
+                              const Vec3 &angular_velocity)
 {
   mavlink_message_t msg;
   mavlink_msg_attitude_quaternion_pack(system_id, compid_, &msg,
                                        timestamp_us / 1000,
-                                       attitude.w,
-                                       attitude.x,
-                                       attitude.y,
-                                       attitude.z,
-                                       angular_velocity.x,
-                                       angular_velocity.y,
-                                       angular_velocity.z);
+                                       attitude.w(),
+                                       attitude.x(),
+                                       attitude.y(),
+                                       attitude.z(),
+                                       angular_velocity.x(),
+                                       angular_velocity.y(),
+                                       angular_velocity.z());
   send_message(msg);
 }
 
@@ -144,19 +144,19 @@ void Mavlink::send_heartbeat(uint8_t system_id, bool fixed_wing)
 }
 
 void Mavlink::send_imu(uint8_t system_id, uint64_t timestamp_us,
-                       const turbomath::Vector &accel,
-                       const turbomath::Vector &gyro,
+                       const Vec3 &accel,
+                       const Vec3 &gyro,
                        float temperature)
 {
   mavlink_message_t msg;
   mavlink_msg_small_imu_pack(system_id, compid_, &msg,
                              timestamp_us,
-                             accel.x,
-                             accel.y,
-                             accel.z,
-                             gyro.x,
-                             gyro.y,
-                             gyro.z,
+                             accel.x(),
+                             accel.y(),
+                             accel.z(),
+                             gyro.x(),
+                             gyro.y(),
+                             gyro.z(),
                              temperature);
   send_message(msg);
 }
@@ -185,10 +185,10 @@ void Mavlink::send_log_message(uint8_t system_id, LogSeverity severity, const ch
   send_message(msg);
 }
 
-void Mavlink::send_mag(uint8_t system_id, const turbomath::Vector &mag)
+void Mavlink::send_mag(uint8_t system_id, const Vec3 &mag)
 {
   mavlink_message_t msg;
-  mavlink_msg_small_mag_pack(system_id, compid_, &msg, mag.x, mag.y, mag.z);
+  mavlink_msg_small_mag_pack(system_id, compid_, &msg, mag.x(), mag.y(), mag.z());
   send_message(msg);
 }
 

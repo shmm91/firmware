@@ -37,6 +37,9 @@
 #include <math.h>
 
 #include <turbomath/turbomath.h>
+#include <math/quat.h>
+
+using namespace rosflight_math;
 
 namespace rosflight_firmware
 {
@@ -49,11 +52,8 @@ class Estimator
 public:
   struct State
   {
-    turbomath::Vector angular_velocity;
-    turbomath::Quaternion attitude;
-    float roll;
-    float pitch;
-    float yaw;
+    Vec3 angular_velocity;
+    Quat attitude;
     uint64_t timestamp_us;
   };
 
@@ -67,7 +67,7 @@ public:
   void reset_adaptive_bias();
 
 private:
-  const turbomath::Vector g_ = {0.0f, 0.0f, -1.0f};
+  const Vec3 g_ = {0.0f, 0.0f, -1.0f};
 
   ROSflight& RF_;
   State state_;
@@ -75,15 +75,15 @@ private:
   uint64_t last_time_;
   uint64_t last_acc_update_us_;
 
-  turbomath::Vector w1_;
-  turbomath::Vector w2_;
+  Vec3 w1_;
+  Vec3 w2_;
 
-  turbomath::Vector bias_;
+  Vec3 bias_;
 
-  turbomath::Vector accel_LPF_;
-  turbomath::Vector gyro_LPF_;
+  Vec3 accel_LPF_;
+  Vec3 gyro_LPF_;
 
-  turbomath::Vector w_acc_;
+  Vec3 w_acc_;
 
   void run_LPF();
 };

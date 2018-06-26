@@ -36,8 +36,12 @@
 #include <functional>
 
 #include <turbomath/turbomath.h>
+#include <math/quat.h>
+#include <math/defs.h>
 
 #include "param.h"
+
+using namespace rosflight_math;
 
 namespace rosflight_firmware
 {
@@ -98,19 +102,19 @@ public:
 
   virtual void send_attitude_quaternion(uint8_t system_id,
                                         uint64_t timestamp_us,
-                                        const turbomath::Quaternion &attitude,
-                                        const turbomath::Vector &angular_velocity) = 0;
+                                        const Quat &attitude,
+                                        const Vec3 &angular_velocity) = 0;
   virtual void send_baro(uint8_t system_id, float altitude, float pressure, float temperature) = 0;
   virtual void send_command_ack(uint8_t system_id, Command command, bool success) = 0;
   virtual void send_diff_pressure(uint8_t system_id, float velocity, float pressure, float temperature) = 0;
   virtual void send_heartbeat(uint8_t system_id, bool fixed_wing) = 0;
   virtual void send_imu(uint8_t system_id,
                         uint64_t timestamp_us,
-                        const turbomath::Vector &accel,
-                        const turbomath::Vector &gyro,
+                        const Vec3 &accel,
+                        const Vec3 &gyro,
                         float temperature) = 0;
   virtual void send_log_message(uint8_t system_id, LogSeverity severity, const char * text) = 0;
-  virtual void send_mag(uint8_t system_id, const turbomath::Vector &mag) = 0;
+  virtual void send_mag(uint8_t system_id, const Vec3 &mag) = 0;
   virtual void send_named_value_int(uint8_t system_id, uint32_t timestamp_ms, const char * const name, int32_t value) = 0;
   virtual void send_named_value_float(uint8_t system_id, uint32_t timestamp_ms, const char * const name, float value) = 0;
   virtual void send_output_raw(uint8_t system_id, uint32_t timestamp_ms, const float raw_outputs[8]) = 0;

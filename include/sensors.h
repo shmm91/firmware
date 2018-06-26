@@ -36,6 +36,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <turbomath/turbomath.h>
+#include <math/quat.h>
+
+using namespace Eigen;
+using namespace rosflight_math;
 
 namespace rosflight_firmware
 {
@@ -47,9 +51,9 @@ class Sensors
 public:
   struct Data
   {
-    turbomath::Vector accel = {0, 0, 0};
-    turbomath::Vector gyro = {0, 0, 0};
-    turbomath::Quaternion fcu_orientation = {1, 0, 0, 0};
+    Vector3f accel = {0, 0, 0};
+    Vector3f gyro = {0, 0, 0};
+    Quat fcu_orientation = Quat::Identity();
     float imu_temperature = 0;
     uint64_t imu_time = 0;
 
@@ -66,7 +70,7 @@ public:
     float sonar_range = 0;
     bool sonar_range_valid = false;
 
-    turbomath::Vector mag = {0, 0, 0};
+    Vec3 mag = {0, 0, 0};
 
     bool baro_present = false;
     bool mag_present = false;
@@ -77,7 +81,7 @@ public:
   Sensors(ROSflight& rosflight);
 
   inline const Data& data() const { return data_; }
-  void get_filtered_IMU(turbomath::Vector& accel, turbomath::Vector& gyro, uint64_t& stamp_us);
+  void get_filtered_IMU(Vec3& accel, Vec3& gyro, uint64_t& stamp_us);
 
   // function declarations
   void init();
@@ -166,17 +170,17 @@ private:
 
   // IMU calibration
   uint16_t gyro_calibration_count_ = 0;
-  turbomath::Vector gyro_sum_ = {0, 0, 0};
+  Vec3 gyro_sum_ = {0, 0, 0};
   uint16_t accel_calibration_count_ = 0;
-  turbomath::Vector acc_sum_ = {0, 0, 0};
-  const turbomath::Vector gravity_ = {0.0f, 0.0f, 9.80665f};
+  Vec3 acc_sum_ = {0, 0, 0};
+  const Vec3 gravity_ = {0.0f, 0.0f, 9.80665f};
   float acc_temp_sum_ = 0.0f;
-  turbomath::Vector max_ = {-1000.0f, -1000.0f, -1000.0f};
-  turbomath::Vector min_ = {1000.0f, 1000.0f, 1000.0f};
+  Vec3 max_ = {-1000.0f, -1000.0f, -1000.0f};
+  Vec3 min_ = {1000.0f, 1000.0f, 1000.0f};
 
   // Filtered IMU
-  turbomath::Vector accel_int_;
-  turbomath::Vector gyro_int_;
+  Vec3 accel_int_;
+  Vec3 gyro_int_;
   uint64_t int_start_us_;
   uint64_t prev_imu_read_time_us_;
 

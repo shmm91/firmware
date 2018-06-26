@@ -115,12 +115,12 @@ void Controller::run()
   bool update_integrators = (RF_.state_manager_.state().armed) && (RF_.command_manager_.combined_control().F.value > 0.1f) && dt_us < 10000;
 
   // Run the PID loops
-  turbomath::Vector pid_output = run_pid_loops(dt_us, RF_.estimator_.state(), RF_.command_manager_.combined_control(), update_integrators);
+  Vec3 pid_output = run_pid_loops(dt_us, RF_.estimator_.state(), RF_.command_manager_.combined_control(), update_integrators);
 
   // Add feedforward torques
-  output_.x = pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE);
-  output_.y = pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE);
-  output_.z = pid_output.z + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE);
+  output_.x = pid_output.x() + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE);
+  output_.y = pid_output.y() + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE);
+  output_.z = pid_output.z() + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE);
   output_.F = RF_.command_manager_.combined_control().F.value;
 }
 
@@ -135,29 +135,20 @@ void Controller::calculate_equilbrium_torque_from_rc()
     // Prepare for calibration
     // artificially tell the flight controller it is leveled
     Estimator::State fake_state;
-    fake_state.angular_velocity.x = 0.0f;
-    fake_state.angular_velocity.y = 0.0f;
-    fake_state.angular_velocity.z = 0.0f;
+    fake_state.angular_velocity.setZero();
 
-    fake_state.attitude.x = 0.0f;
-    fake_state.attitude.y = 0.0f;
-    fake_state.attitude.z = 0.0f;
-    fake_state.attitude.w = 1.0f;
-
-    fake_state.roll = 0.0f;
-    fake_state.pitch = 0.0f;
-    fake_state.yaw = 0.0f;
+    fake_state.attitude = Quat::Identity();
 
     // pass the rc_control through the controller
     // dt is zero, so what this really does is applies the P gain with the settings
     // your RC transmitter, which if it flies level is a really good guess for
     // the static offset torques
-    turbomath::Vector pid_output = run_pid_loops(0, fake_state, RF_.command_manager_.rc_control(), false);
+    Vec3 pid_output = run_pid_loops(0, fake_state, RF_.command_manager_.rc_control(), false);
 
     // the output from the controller is going to be the static offsets
-    RF_.params_.set_param_float(PARAM_X_EQ_TORQUE, pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE));
-    RF_.params_.set_param_float(PARAM_Y_EQ_TORQUE, pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE));
-    RF_.params_.set_param_float(PARAM_Z_EQ_TORQUE, pid_output.z + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE));
+    RF_.params_.set_param_float(PARAM_X_EQ_TORQUE, pid_output.x() + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE));
+    RF_.params_.set_param_float(PARAM_Y_EQ_TORQUE, pid_output.y() + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE));
+    RF_.params_.set_param_float(PARAM_Z_EQ_TORQUE, pid_output.z() + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE));
 
     RF_.comm_manager_.log(CommLink::LogSeverity::LOG_WARNING, "Equilibrium torques found and applied.");
     RF_.comm_manager_.log(CommLink::LogSeverity::LOG_WARNING, "Please zero out trims on your transmitter");
@@ -174,34 +165,34 @@ void Controller::param_change_callback(uint16_t param_id)
   init();
 }
 
-turbomath::Vector Controller::run_pid_loops(uint32_t dt_us, const Estimator::State& state, const control_t& command, bool update_integrators)
+Vec3 Controller::run_pid_loops(uint32_t dt_us, const Estimator::State& state, const control_t& command, bool update_integrators)
 {
   // Based on the control types coming from the command manager, run the appropriate PID loops
-  turbomath::Vector out;
+  Vec3 out;
 
   float dt = 1e-6*dt_us;
 
   // ROLL
   if (command.x.type == RATE)
-    out.x = roll_rate_.run(dt, state.angular_velocity.x, command.x.value, update_integrators);
+    out.x() = roll_rate_.run(dt, state.angular_velocity.x(), command.x.value, update_integrators);
   else if (command.x.type == ANGLE)
-    out.x = roll_.run(dt, state.roll, command.x.value, update_integrators, state.angular_velocity.x);
+    out.x() = roll_.run(dt, state.attitude.roll(), command.x.value, update_integrators, state.angular_velocity.x());
   else
-    out.x = command.x.value;
+    out.x() = command.x.value;
 
   // PITCH
   if (command.y.type == RATE)
-    out.y = pitch_rate_.run(dt, state.angular_velocity.y, command.y.value, update_integrators);
+    out.y() = pitch_rate_.run(dt, state.angular_velocity.y(), command.y.value, update_integrators);
   else if (command.y.type == ANGLE)
-    out.y = pitch_.run(dt, state.pitch, command.y.value, update_integrators, state.angular_velocity.y);
+    out.y() = pitch_.run(dt, state.attitude.pitch(), command.y.value, update_integrators, state.angular_velocity.y());
   else
-    out.y = command.y.value;
+    out.y() = command.y.value;
 
   // YAW
   if (command.z.type == RATE)
-    out.z = yaw_rate_.run(dt, state.angular_velocity.z, command.z.value, update_integrators);
+    out.z() = yaw_rate_.run(dt, state.angular_velocity.z(), command.z.value, update_integrators);
   else
-    out.z = command.z.value;
+    out.z() = command.z.value;
 
   return out;
 }
@@ -218,7 +209,7 @@ Controller::PID::PID() :
   tau_(0.05)
 {}
 
-void Controller::PID::init(float kp, float ki, float kd, float max, float min, float tau)
+void Controller::PID::init(const float kp, const float ki, const float kd, const float max, const float min, const float tau)
 {
   kp_ = kp;
   ki_ = ki;
@@ -228,7 +219,7 @@ void Controller::PID::init(float kp, float ki, float kd, float max, float min, f
   tau_ = tau;
 }
 
-float Controller::PID::run(float dt, float x, float x_c, bool update_integrator)
+float Controller::PID::run(const float dt, const float x, const float x_c, const bool update_integrator)
 {
   float xdot;
   if (dt > 0.0001f)
@@ -249,7 +240,7 @@ float Controller::PID::run(float dt, float x, float x_c, bool update_integrator)
   return run(dt, x, x_c, update_integrator, xdot);
 }
 
-float Controller::PID::run(float dt, float x, float x_c, bool update_integrator, float xdot)
+float Controller::PID::run(const float dt, const float x, const float x_c, const bool update_integrator, const float xdot)
 {
   // Calculate Error
   float error = x_c - x;
