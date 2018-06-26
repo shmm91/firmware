@@ -35,8 +35,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-
-#include <turbomath/turbomath.h>
 #include <math/quat.h>
 
 using namespace rosflight_math;
@@ -52,8 +50,10 @@ class Estimator
 public:
   struct State
   {
-    Vec3 angular_velocity;
+    Vec3 position;
     Quat attitude;
+    Vec3 linear_velocity;
+    Vec3 angular_velocity;
     uint64_t timestamp_us;
   };
 
@@ -85,6 +85,8 @@ private:
 
   Vec3 w_acc_;
 
+  void run_ins();
+  void run_mahony();
   void run_LPF();
 };
 

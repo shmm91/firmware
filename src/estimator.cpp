@@ -41,7 +41,9 @@ Estimator::Estimator(ROSflight &_rf):
 
 void Estimator::reset_state()
 {
+  state_.position.setZero();
   state_.attitude = Quat::Identity();
+  state_.linear_velocity.setZero();
   state_.angular_velocity.setZero();
 
   w1_.setZero();
@@ -81,6 +83,24 @@ void Estimator::run_LPF()
 }
 
 void Estimator::run()
+{
+  if (RF_.board_.ins_present())
+    run_ins();
+  else
+    run_mahony();
+}
+
+void Estimator::run_ins()
+{
+  // grab estimates from uINS
+  state_.timestamp_us = RF_.sensors_.data().ins_time;
+  state_.position = RF_.sensors_.data().ins_position;
+  state_.attitude = RF_.sensors_.data().ins_attitude;
+  state_.linear_velocity = RF_.sensors_.data().ins_linear_velocity;
+  state_.angular_velocity = RF_.sensors_.data().ins_angular_velocity;
+}
+
+void Estimator::run_mahony()
 {
   float kp, ki;
   uint64_t now_us = RF_.sensors_.data().imu_time;
