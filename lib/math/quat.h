@@ -1,7 +1,14 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wlogical-op"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#pragma GCC diagnostic pop
+
 #include <math.h>
 #include <iostream>
 #include <math/defs.h>
@@ -39,15 +46,17 @@ public:
              w() * q.x() + x() *q.w() + y() * q.z() - z() * q.y(),
              w() * q.y() - x() *q.z() + y() * q.w() + z() * q.x(),
              w() * q.z() + x() *q.y() - y() * q.x() + z() * q.w();
+    return *this;
   }
 
-  Quat& operator= (const Quat q) { arr_ = q.elements(); }
-  Quat& operator= (const Vec4 in) {arr_ = in; }
+  Quat& operator= (const Quat q) { arr_ = q.elements(); return *this; }
+  Quat& operator= (const Vec4 in) {arr_ = in;  return *this;}
 
   Quat operator+ (const Vec3 v) { return boxplus(v); }
   Quat& operator+= (const Vec3 v)
   {
     arr_ = boxplus(v).elements();
+    return *this;
   }
 
   Vec3 operator- (const Quat q) {return boxminus(q);}
@@ -250,6 +259,7 @@ public:
   Quat& normalize()
   {
     arr_ /= arr_.norm();
+    return *this;
   }
 
   Matrix<f_t, 3, 2> f_trot(Matrix<f_t, 3, 2> v)
@@ -292,6 +302,7 @@ public:
   Quat& invert()
   {
     arr_.block<3,1>(1,0) *= -1.0;
+    return *this;
   }
 
   Quat inverse() const

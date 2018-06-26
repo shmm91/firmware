@@ -18,6 +18,7 @@ A2L=arm-none-eabi-addr2line
 ROSFLIGHT_DIR   = ../..
 TURBOMATH_DIR   = $(ROSFLIGHT_DIR)/lib/turbomath
 MAVLINK_DIR     = $(ROSFLIGHT_DIR)/comms/mavlink
+EIGEN_DIR = /usr/include/eigen3
 
 #################################
 # SOURCE FILES
@@ -56,7 +57,8 @@ CSOURCES =
 # Common Include Files
 INCLUDE_DIRS =  $(ROSFLIGHT_DIR)/include \
                 $(ROSFLIGHT_DIR)/lib \
-                $(MAVLINK_DIR)
+                $(MAVLINK_DIR) \
+                $(EIGEN_DIR)
 
 #################################
 # BUILD TYPE
@@ -100,10 +102,11 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET)_$(BOARD)_$(BUILD_TYPE).bin
 # Common Flags
 #################################
 DEFS = -DTARGET_$(BOARD) $(GIT_VARS)
-CXX_STRICT_FLAGS += -pedantic -pedantic-errors -Werror -Wall -Wextra \
+CXX_STRICT_FLAGS += -pedantic -pedantic-errors  -Wall -Wextra \
   -Wcast-align -Wcast-qual -Wdisabled-optimization -Wformat=2 -Wlogical-op -Wmissing-include-dirs \
   -Wredundant-decls -Wshadow -Wstrict-overflow=2 -Wswitch -Wundef -Wunused -Wvariadic-macros \
   -Wctor-dtor-privacy -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wsign-promo -Wstrict-null-sentinel
+#  -Werror
 FILE_SIZE_FLAGS += -ffunction-sections -fdata-sections -fno-exceptions
 CXX_FILE_SIZE_FLAGS =-c $(FILE_SIZE_FLAGS) -fno-rtti
 CFLAGS   = -c $(DEFS) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) -std=c99

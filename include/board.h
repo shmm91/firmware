@@ -92,9 +92,10 @@ public:
 
   virtual bool ins_present() = 0;
   virtual void ins_update() = 0;
-  virtual void ins_read(float pos[3], float vel[3], float q[4], float omega[3], uint64_t* time) = 0;
+  virtual void ins_read(float pos[3], float vel[3], float q[4], float omega[3], uint64_t* time_us) = 0;
   virtual void ins_sync_time(uint64_t* time) = 0;
   virtual bool ins_fix() = 0;
+  virtual void reset_ins_origin() = 0;
 
 // RC
   virtual void rc_init(rc_type_t rc_type) = 0;
