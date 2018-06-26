@@ -72,10 +72,17 @@ public:
 
     Vec3 mag = {0, 0, 0};
 
+    uint64_t ins_time = 0;
+    Vec3 ins_position = {0, 0, 0};
+    Quat ins_attitude = Quat::Identity();
+    Vec3 ins_linear_velocity = {0, 0, 0};
+    Vec3 ins_angular_velocity = {0, 0, 0};
+
     bool baro_present = false;
     bool mag_present = false;
     bool sonar_present = false;
     bool diff_pressure_present = false;
+    bool ins_present = false;
   };
 
   Sensors(ROSflight& rosflight);
