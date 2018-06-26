@@ -16,8 +16,12 @@ typedef Eigen::Matrix<f_t, 4, 1> Vec4;
 typedef Eigen::Matrix<f_t, 3, 1> Vec3;
 typedef Eigen::Matrix<f_t, 3, 3> Mat33;
 
+#ifndef DEG2RAD
 #define DEG2RAD 0.01745327
+#endif
+#ifndef RAD2DEG
 #define RAD2DEG 57.295827
+#endif
 
 } // namespace rosflight_math
 

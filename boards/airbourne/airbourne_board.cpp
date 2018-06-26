@@ -48,6 +48,12 @@ void AirbourneBoard::init_board()
   ext_i2c_.init(&i2c_config[EXTERNAL_I2C]);
   spi1_.init(&spi_config[MPU6000_SPI]);
   spi3_.init(&spi_config[FLASH_SPI]);
+  vcp_.init();
+  
+  ins_uart_.init(&uart_config[UART1], 3000000);
+  
+//  sbus_uart_.init(&uart_config[UART3], 100000, UART::MODE_8E2);
+//  inv_pin_.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
 }
 
 void AirbourneBoard::board_reset(bool bootloader)
@@ -76,7 +82,6 @@ void AirbourneBoard::clock_delay(uint32_t milliseconds)
 void AirbourneBoard::serial_init(uint32_t baud_rate)
 {
   (void)baud_rate;
-  vcp_.init();
 }
 
 void AirbourneBoard::serial_write(const uint8_t *src, size_t len)
@@ -103,10 +108,15 @@ void AirbourneBoard::serial_flush()
 void AirbourneBoard::sensors_init()
 {
   while(millis() < 50) {} // wait for sensors to boot up
-  imu_.init(&spi1_);
   
-  baro_.init(&int_i2c_);
-  mag_.init(&int_i2c_);
+  ins_.init(&ins_uart_);
+  
+  if (!ins_present())
+  {
+    imu_.init(&spi1_);
+    baro_.init(&int_i2c_);
+    mag_.init(&int_i2c_);
+  }
   airspeed_.init(&ext_i2c_);
 
 }
@@ -118,21 +128,33 @@ uint16_t AirbourneBoard::num_sensor_errors()
 
 bool AirbourneBoard::new_imu_data()
 {
-  return imu_.new_data();
+  if (ins_present())
+    return ins_.new_imu_data();
+  else
+    return imu_.new_data();
 }
 
 bool AirbourneBoard::imu_read(float accel[3], float* temperature, float gyro[3], uint64_t* time_us)
 {
-  float read_accel[3], read_gyro[3];
-  imu_.read(read_accel, read_gyro, temperature, time_us);
-
-  accel[0] = -read_accel[1];
-  accel[1] = -read_accel[0];
-  accel[2] = -read_accel[2];
-
-  gyro[0] = -read_gyro[1];
-  gyro[1] = -read_gyro[0];
-  gyro[2] = -read_gyro[2];
+  if (ins_present())
+  {
+    uint32_t time_ms;
+    ins_.read_IMU(gyro, accel, &time_ms);
+    *time_us = time_ms * 1000;
+  }
+  else
+  {
+    float read_accel[3], read_gyro[3];
+    imu_.read(read_accel, read_gyro, temperature, time_us);
+  
+    accel[0] = -read_accel[1];
+    accel[1] = -read_accel[0];
+    accel[2] = -read_accel[2];
+  
+    gyro[0] = -read_gyro[1];
+    gyro[1] = -read_gyro[0];
+    gyro[2] = -read_gyro[2];
+  }
 
   return true;
 }
@@ -144,35 +166,65 @@ void AirbourneBoard::imu_not_responding_error()
 
 bool AirbourneBoard::mag_present()
 {
+  if (ins_present())
+  {
+    return true;
+  }
   mag_.update();
   return mag_.present();
 }
 
 void AirbourneBoard::mag_update()
 {
+  if (ins_present())
+    return;
   mag_.update();
 }
 
 void AirbourneBoard::mag_read(float mag[3])
 {
-  mag_.update();
-  mag_.read(mag);
+  if (ins_present())
+  {
+    float baro;
+    uint32_t time_ms;
+    ins_.read_other_sensors(mag, &baro, &time_ms);
+  }
+  else
+  {
+    mag_.update();
+    mag_.read(mag);
+  }
 }
 bool AirbourneBoard::baro_present()
 {
-  baro_.update();
+  if (ins_present())
+    return true;
+  else
+    baro_.update();
   return baro_.present();
 }
 
 void AirbourneBoard::baro_update()
 {
-  baro_.update();
+  if (ins_present())
+    return;
+  else
+    baro_.update();
 }
 
 void AirbourneBoard::baro_read(float *pressure, float *temperature)
 {
-  baro_.update();
-  baro_.read(pressure, temperature);
+  if (ins_present())
+  {
+    float mag[3];
+    uint32_t time_ms;
+    ins_.read_other_sensors(mag, pressure, &time_ms);
+  }
+  else
+  {
+    baro_.update();
+    baro_.read(pressure, temperature);
+  }
 }
 
 bool AirbourneBoard::diff_pressure_present()
@@ -210,14 +262,40 @@ float AirbourneBoard::sonar_read()
   return 0.0;
 }
 
+bool AirbourneBoard::ins_present()
+{
+  return ins_.present();
+}
+
+void AirbourneBoard::ins_update()
+{
+  return ins_.update();
+}
+
+bool AirbourneBoard::ins_fix()
+{
+  return ins_.got_fix();
+}
+
+void AirbourneBoard::ins_read(float pos[3], float vel[3], float q[4], uint64_t* time_us)
+{
+  uint32_t time_ms;
+  ins_.read_INS(pos, vel, q, &time_ms);
+  *time_us = time_ms * 1000; // INS reports ms
+}
+
+void AirbourneBoard::reset_ins_origin()
+{
+  ins_.set_current_pos_as_refLLa();
+}
+
+
 // PWM
 void AirbourneBoard::rc_init(rc_type_t rc_type)
 {
   switch (rc_type)
   {
   case RC_TYPE_SBUS:
-    sbus_uart_.init(&uart_config[0], 100000, UART::MODE_8E2);
-    inv_pin_.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
     rc_sbus_.init(&inv_pin_, &sbus_uart_);
     rc_ = &rc_sbus_;
     break;

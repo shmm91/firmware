@@ -52,6 +52,7 @@
 #include "pwm.h"
 #include "led.h"
 #include "uart.h"
+#include "uINS.h"
 
 #include "board.h"
 
@@ -73,12 +74,14 @@ private:
     MS4525 airspeed_;
     RC_SBUS rc_sbus_;
     UART sbus_uart_;
+    UART ins_uart_;
     GPIO inv_pin_;
     RC_PPM rc_ppm_;
     PWM_OUT esc_out_[PWM_NUM_OUTPUTS];
     LED led2_;
     LED led1_;
     M25P16 flash_;
+    uINS ins_;
 
     RC_BASE* rc_ = nullptr;
 
@@ -143,6 +146,11 @@ public:
   void sonar_update() override;
   float sonar_read() override;
 
+  bool ins_present() override;
+  void ins_update() override;
+  bool ins_fix() override;
+  void ins_read(float pos[3], float vel[3], float q[4], uint64_t* time_us) override;
+  void reset_ins_origin() override;
 
   // RC
   void rc_init(rc_type_t rc_type) override;

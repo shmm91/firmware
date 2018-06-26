@@ -50,6 +50,8 @@ USBCDC_DIR          = $(AIRBOURNE_ROOT)/lib/STM32_USB_Device_Library/Class/cdc
 VCP_DIR             = $(AIRBOURNE_ROOT)/lib/vcp
 STARTUP_DIR         = $(AIRBOURNE_ROOT)/lib/startup
 PRINTF_DIR          = $(AIRBOURNE_ROOT)/lib/printf
+IS_DIR              = $(AIRBOURNE_ROOT)/lib/inertialsense_serial_protocol
+AIRBOURNE_LIB_DIR   = $(AIRBOURNE_ROOT)/lib
 BIN_DIR       		= $(BOARD_DIR)/build
 BOARD_DIR       	= $(ROSFLIGHT_ROOT)/boards/airbourne
 
@@ -108,6 +110,10 @@ USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 VPATH := $(VPATH):$(VCP_DIR)
 VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
 
+# Add inertialsense source files
+VPATH := $(VPATH):$(IS_DIR)
+IS_SRC = data_sets.c ISComm.c
+
 # Make a list of source files and includes
 VPATH := $(VPATH):$(AIRBOURNE_SRC_DIR)
 AIRBOURNE_SRCS = led.cpp \
@@ -126,7 +132,8 @@ AIRBOURNE_SRCS = led.cpp \
                  rc_sbus.cpp \
                  uart.cpp \
                  M25P16.cpp \
-                 ms4525.cpp
+                 ms4525.cpp \
+                 uINS.cpp
 
 
 # board-specific source files
@@ -143,6 +150,7 @@ CSOURCES =  $(CMSIS_SRC) \
             $(USBCDC_SRC) \
             $(PROCESSOR_SRC) \
             $(VCP_SRC) \
+            $(IS_SRC) \
             system.c \
             system_stm32f4xx.c
 
@@ -159,6 +167,7 @@ INCLUDE_DIRS += $(AIRBOURNE_SRC_DIR) \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
                 $(PRINTF_DIR) \
+                $(AIRBOURNE_LIB_DIR) \
                 $(VCP_DIR)
 
 #################################
@@ -166,7 +175,7 @@ INCLUDE_DIRS += $(AIRBOURNE_SRC_DIR) \
 #################################
 
 MCFLAGS= -mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
-DEFS+=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -D__FPU_USED -DHSE_VALUE=8000000 -DUSE_USB_OTG_FS
+DEFS+=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -D__FPU_USED -DHSE_VALUE=8000000 -DUSE_USB_OTG_FS -DARM
 CFLAGS += $(MCFLAGS) $(OPTIMIZE) $(addprefix -I,$(INCLUDE_DIRS))
 CXXFLAGS += $(MCFLAGS) $(OPTIMIZE) $(addprefix -I,$(INCLUDE_DIRS))
 LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections -Wl,-Map=main.map  
