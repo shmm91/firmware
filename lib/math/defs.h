@@ -7,7 +7,7 @@ namespace rosflight_math
 {
 
 // Use this to change all quaternion implemention to use float or f_t
-#ifdef MATH_USE_f_t
+#ifdef MATH_USE_DOUBLE
     typedef double f_t;
 #else
     typedef float f_t;
