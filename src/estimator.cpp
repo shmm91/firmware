@@ -97,7 +97,7 @@ void Estimator::run_ins()
   state_.position = RF_.sensors_.data().ins_position;
   state_.attitude = RF_.sensors_.data().ins_attitude;
   state_.linear_velocity = RF_.sensors_.data().ins_linear_velocity;
-  state_.angular_velocity = RF_.sensors_.data().ins_angular_velocity;
+  state_.angular_velocity = RF_.sensors_.data().gyro;
 }
 
 void Estimator::run_mahony()

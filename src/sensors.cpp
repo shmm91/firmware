@@ -115,6 +115,7 @@ bool Sensors::run(void)
 {
   // First, check for new IMU data
   bool got_imu = update_imu();
+  update_ins();
 
   // Look for sensors that may not have been recognized at start because they weren't attached
   // to the 5V rail (only if disarmed)
@@ -124,6 +125,24 @@ bool Sensors::run(void)
   // Update other sensors
   update_other_sensors();
   return got_imu;
+}
+
+void Sensors::update_ins()
+{
+  float ned[3];
+  float uvw[3];
+  float q[4];
+  rf_.board_.ins_read(ned, uvw, q, &data_.ins_time);
+  data_.ins_position.x() = ned[0];
+  data_.ins_position.y() = ned[1];
+  data_.ins_position.z() = ned[2];
+  data_.ins_linear_velocity.x() = uvw[0];
+  data_.ins_linear_velocity.y() = uvw[1];
+  data_.ins_linear_velocity.z() = uvw[2];
+  data_.ins_attitude.setW(q[0]);
+  data_.ins_attitude.setX(q[1]);
+  data_.ins_attitude.setY(q[2]);
+  data_.ins_attitude.setZ(q[3]);
 }
 
 

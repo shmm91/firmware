@@ -113,6 +113,12 @@ public:
                         const Vec3 &accel,
                         const Vec3 &gyro,
                         float temperature) = 0;
+  virtual void send_ins(uint8_t system_id,
+                        uint64_t timestamp_us,
+                        const Vec3 &ned,
+                        const Vec3 &uvw,
+                        const Quat &att,
+                        const Vec3 &pqr) = 0;
   virtual void send_log_message(uint8_t system_id, LogSeverity severity, const char * text) = 0;
   virtual void send_mag(uint8_t system_id, const Vec3 &mag) = 0;
   virtual void send_named_value_int(uint8_t system_id, uint32_t timestamp_ms, const char * const name, int32_t value) = 0;

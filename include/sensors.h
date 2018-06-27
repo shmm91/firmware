@@ -76,7 +76,6 @@ public:
     Vec3 ins_position = {0, 0, 0};
     Quat ins_attitude = Quat::Identity();
     Vec3 ins_linear_velocity = {0, 0, 0};
-    Vec3 ins_angular_velocity = {0, 0, 0};
 
     bool baro_present = false;
     bool mag_present = false;
@@ -167,6 +166,7 @@ private:
   void correct_baro(void);
   void correct_diff_pressure(void);
   bool update_imu(void);
+  void update_ins(void);
   void update_other_sensors(void);
   void look_for_disabled_sensors(void);
   uint32_t last_time_look_for_disarmed_sensors_ = 0;

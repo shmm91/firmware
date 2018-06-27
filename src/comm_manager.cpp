@@ -65,6 +65,7 @@ void CommManager::init()
   RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_HEARTBEAT, param_id);}, PARAM_STREAM_HEARTBEAT_RATE);
   RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_ATTITUDE, param_id);}, PARAM_STREAM_ATTITUDE_RATE);
   RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_IMU, param_id);}, PARAM_STREAM_IMU_RATE);
+  RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_INS, param_id);}, PARAM_STREAM_INS_RATE);
   RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_ATTITUDE, param_id);}, PARAM_STREAM_ATTITUDE_RATE);
   RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_DIFF_PRESSURE, param_id);}, PARAM_STREAM_AIRSPEED_RATE);
   RF_.params_.add_callback([this](int16_t param_id){this->set_streaming_rate(STREAM_ID_BARO, param_id);}, PARAM_STREAM_BARO_RATE);
@@ -341,6 +342,16 @@ void CommManager::send_imu(void)
                       gyro,
                       RF_.sensors_.data().imu_temperature);
 
+}
+
+void CommManager::send_ins(void)
+{
+  comm_link_.send_ins(sysid_,
+                      RF_.estimator_.state().timestamp_us,
+                      RF_.estimator_.state().position,
+                      RF_.estimator_.state().linear_velocity,
+                      RF_.estimator_.state().attitude,
+                      RF_.estimator_.state().angular_velocity);
 }
 
 void CommManager::send_output_raw(void)

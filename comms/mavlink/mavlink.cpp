@@ -161,6 +161,18 @@ void Mavlink::send_imu(uint8_t system_id, uint64_t timestamp_us,
   send_message(msg);
 }
 
+void Mavlink::send_ins(uint8_t system_id, uint64_t timestamp_us, const Vec3 &ned, const Vec3 &uvw, const Quat &att, const Vec3 &pqr)
+{
+  mavlink_message_t msg;
+  mavlink_msg_rosflight_ins_pack(system_id, compid_, &msg,
+                                 timestamp_us, 
+                                 ned.x(), ned.y(), ned.z(),
+                                 uvw.x(), uvw.y(), uvw.z(),
+                                 att.w(), att.x(), att.y(), att.z(),
+                                 pqr.x(), pqr.y(), pqr.z());
+  send_message(msg);
+}
+
 void Mavlink::send_log_message(uint8_t system_id, LogSeverity severity, const char * text)
 {
   MAV_SEVERITY mavlink_severity = MAV_SEVERITY_ENUM_END;

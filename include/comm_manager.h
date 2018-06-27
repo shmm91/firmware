@@ -54,6 +54,7 @@ private:
     STREAM_ID_ATTITUDE,
 
     STREAM_ID_IMU,
+    STREAM_ID_INS,
     STREAM_ID_DIFF_PRESSURE,
     STREAM_ID_BARO,
     STREAM_ID_SONAR,
@@ -107,6 +108,7 @@ private:
   void send_status(void);
   void send_attitude(void);
   void send_imu(void);
+  void send_ins(void);
   void send_output_raw(void);
   void send_rc_raw(void);
   void send_diff_pressure(void);
@@ -126,6 +128,7 @@ private:
     Stream(0,     [this]{this->send_status();}),
     Stream(0,     [this]{this->send_attitude();}),
     Stream(0,     [this]{this->send_imu();}),
+    Stream(0,     [this]{this->send_ins();}),
     Stream(0,     [this]{this->send_diff_pressure();}),
     Stream(0,     [this]{this->send_baro();}),
     Stream(0,     [this]{this->send_sonar();}),
