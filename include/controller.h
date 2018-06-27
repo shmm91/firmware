@@ -91,6 +91,8 @@ private:
 
   ROSflight& RF_;
 
+  void run_ins();
+  void run_pid();
   Vec3 run_pid_loops(uint32_t dt, const Estimator::State& state, const control_t& command, bool update_integrators);
 
   Output output_;

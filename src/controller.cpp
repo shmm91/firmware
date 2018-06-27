@@ -95,6 +95,32 @@ void Controller::init()
 
 void Controller::run()
 {
+  if (RF_.board_.ins_present())
+  {
+    run_ins();
+  }
+  else
+  {
+    run_pid();
+  }
+}
+
+void Controller::run_ins()
+{
+  // output_.F = RF_.command_manager_.combined_control().F.value;
+
+  // // proportional gain on difference between desired attitude and current attitude
+  // Vec3 omega_d = PARAM_NLC_OMEGA_P*rosflight_math::log(q.invert()*q_d); // !! check for correct direction on this
+
+  // // proportional control to desired angular rate
+  // Vec3 omega_c = omega_d - omega;
+  // output_.x = PARAM_PID_ROLL_RATE_P*omega_c(0);
+  // output_.y = PARAM_PID_PITCH_RATE_P*omega_c(1);
+  // output_.z = PARAM_PID_YAW_RATE_P*omega_c(2);
+}
+
+void Controller::run_pid()
+{
   // Time calculation
   if (prev_time_us_ == 0)
   {
