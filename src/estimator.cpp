@@ -94,10 +94,18 @@ void Estimator::run_ins()
 {
   // grab estimates from uINS
   state_.timestamp_us = RF_.sensors_.data().ins_time;
-  state_.position = RF_.sensors_.data().ins_position;
   state_.attitude = RF_.sensors_.data().ins_attitude;
-  state_.linear_velocity = RF_.sensors_.data().ins_linear_velocity;
   state_.angular_velocity = RF_.sensors_.data().gyro;
+  if (RF_.sensors_.data().ins_valid)
+  {
+    state_.position = RF_.sensors_.data().ins_position;
+    state_.linear_velocity = RF_.sensors_.data().ins_linear_velocity;
+  }
+  else
+  {
+    state_.position.setZero();
+    state_.linear_velocity.setZero();
+  }
 }
 
 void Estimator::run_mahony()

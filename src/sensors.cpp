@@ -133,16 +133,23 @@ void Sensors::update_ins()
   float uvw[3];
   float q[4];
   rf_.board_.ins_read(ned, uvw, q, &data_.ins_time);
-  data_.ins_position.x() = ned[0];
-  data_.ins_position.y() = ned[1];
-  data_.ins_position.z() = ned[2];
-  data_.ins_linear_velocity.x() = uvw[0];
-  data_.ins_linear_velocity.y() = uvw[1];
-  data_.ins_linear_velocity.z() = uvw[2];
+  if (rf_.board_.ins_fix())
+  {
+    data_.ins_valid = true;
+    data_.ins_position.x() = ned[0];
+    data_.ins_position.y() = ned[1];
+    data_.ins_position.z() = ned[2];
+    data_.ins_linear_velocity.x() = uvw[0];
+    data_.ins_linear_velocity.y() = uvw[1];
+    data_.ins_linear_velocity.z() = uvw[2];
+  }
+  else
+    data_.ins_valid = false;
+  
   data_.ins_attitude.setW(q[0]);
   data_.ins_attitude.setX(q[1]);
   data_.ins_attitude.setY(q[2]);
-  data_.ins_attitude.setZ(q[3]);
+  data_.ins_attitude.setZ(q[3]); 
 }
 
 

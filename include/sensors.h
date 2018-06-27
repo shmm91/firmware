@@ -72,6 +72,7 @@ public:
 
     Vec3 mag = {0, 0, 0};
 
+    bool ins_valid = false;
     uint64_t ins_time = 0;
     Vec3 ins_position = {0, 0, 0};
     Quat ins_attitude = Quat::Identity();
