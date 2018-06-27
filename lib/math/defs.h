@@ -1,7 +1,15 @@
 #ifndef ROSFLIGHT_FIRMWARE_MATH_DEFS_H
 #define ROSFLIGHT_FIRMWARE_MATH_DEFS_H
 
-#include "Eigen/Core"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wlogical-op"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#pragma GCC diagnostic pop
 
 namespace rosflight_math
 {

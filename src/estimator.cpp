@@ -161,7 +161,7 @@ void Estimator::run_mahony()
     Vec3 a = accel_LPF_.normalized();
     // Get the quaternion from accelerometer (low-frequency measure q)
     // (Not in either paper)
-    Quat q_acc_inv = Quat::from_two_unit_vectors(g_, a);
+    Quat q_acc_inv = Quat::from_two_unit_vectors(a, g_);
     // Get the error quaternion between observer and low-freq q
     // Below Eq. 45 Mahony Paper
     Quat q_tilde = q_acc_inv * state_.attitude;
@@ -253,6 +253,11 @@ void Estimator::run_mahony()
   {
     RF_.state_manager_.clear_error(StateManager::ERROR_UNHEALTHY_ESTIMATOR);
   }
+}
+
+void Estimator::reset_origin()
+{
+  RF_.board_.reset_ins_origin();
 }
 
 } // namespace rosflight_firmware

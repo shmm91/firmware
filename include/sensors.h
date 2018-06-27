@@ -51,8 +51,8 @@ class Sensors
 public:
   struct Data
   {
-    Vector3f accel = {0, 0, 0};
-    Vector3f gyro = {0, 0, 0};
+    Vec3 accel = {0, 0, 0};
+    Vec3 gyro = {0, 0, 0};
     Quat fcu_orientation = Quat::Identity();
     float imu_temperature = 0;
     uint64_t imu_time = 0;

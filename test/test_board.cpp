@@ -127,6 +127,12 @@ namespace rosflight_firmware
   bool testBoard::sonar_present(){ return false; }
   void testBoard::sonar_update(){}
   float testBoard::sonar_read(){return 0;}
+  
+  bool testBoard::ins_present() {return false;}
+  void testBoard::ins_update() {}
+  bool testBoard::ins_fix() {return false;}
+  void testBoard::ins_read(float pos[3], float vel[3], float q[4], uint64_t* time_us) {}
+  void testBoard::reset_ins_origin() {}
 
 // PWM
 // TODO make these deal in normalized (-1 to 1 or 0 to 1) values (not pwm-specific)

@@ -65,6 +65,7 @@ public:
   void run();
   void reset_state();
   void reset_adaptive_bias();
+  void reset_origin();
 
 private:
   const Vec3 g_ = {0.0f, 0.0f, -1.0f};

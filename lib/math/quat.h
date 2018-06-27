@@ -1,16 +1,9 @@
 #pragma once
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wlogical-op"
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#pragma GCC diagnostic pop
 
 #include <math.h>
 #include <iostream>
+#include <math/defs.h>
 #include <math/math_helper.h>
 
 using namespace Eigen;

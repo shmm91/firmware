@@ -4,11 +4,13 @@ cmake_minimum_required(VERSION 2.6)
 add_definitions(-std=c++11)
 
 # Strict Compilation
-set(CMAKE_CXX_FLAGS "-pedantic -pedantic-errors -Werror -Wall -Wextra \
+set(CMAKE_CXX_FLAGS "-pedantic -pedantic-errors -Wall -Wextra \
   -Wcast-align -Wcast-qual -Wdisabled-optimization -Wformat=2 -Wlogical-op -Wmissing-include-dirs \
   -Wredundant-decls -Wshadow -Wstrict-overflow=5 -Wundef -Wunused -Wvariadic-macros \
   -Wctor-dtor-privacy -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wsign-promo -Wstrict-null-sentinel"
   ${CMAKE_CXX_FLAGS})
+
+#-Werror
 
 # Git information
 execute_process(COMMAND git rev-parse --short=8 HEAD OUTPUT_VARIABLE GIT_VERSION_HASH OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -16,16 +18,17 @@ execute_process(COMMAND git describe --tags --abbrev=8 --always --dirty --long O
 
 add_definitions(-DGIT_VERSION_HASH=0x${GIT_VERSION_HASH})
 add_definitions(-DGIT_VERSION_STRING=\"${GIT_VERSION_STRING}\")
+add_definitions(-DMATH_USE_DOUBLE)
 
 # Locate GTest
 find_package(GTest REQUIRED)
+find_package(Eigen3 REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 include_directories(../include)
 include_directories(../lib)
 include_directories(../comms/mavlink)
-include_directories(${EIGEN3_INCLUDE_DIRS})
-include_directories(/usr/include/eigen3)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 set(ROSFLIGHT_SRC
     ../src/rosflight.cpp

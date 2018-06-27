@@ -212,6 +212,9 @@ void CommManager::command_callback(CommLink::Command command)
     case CommLink::Command::COMMAND_SEND_VERSION:
       comm_link_.send_version(sysid_, GIT_VERSION_STRING);
       break;
+    case CommLink::Command::COMMAND_RESET_ORIGIN:
+      RF_.estimator_.reset_origin();
+      break;
     }
   }
 

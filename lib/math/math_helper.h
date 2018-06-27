@@ -1,10 +1,8 @@
 #pragma once
 
 #include "math.h"
-#include "quat.h"
 #include <math/defs.h>
-
-#include <Eigen/Core>
+#include <math/quat.h>
 
 namespace rosflight_math
 {
