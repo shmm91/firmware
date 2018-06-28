@@ -126,19 +126,31 @@ void Controller::init()
 
 void Controller::run()
 {
-  if (RF_.command_manager_.combined_control().F.type == POS)
+  if (RF_.command_manager_.combined_control().x.type == POS &&
+      RF_.command_manager_.combined_control().y.type == POS &&
+      RF_.command_manager_.combined_control().z.type == ANGLE &&
+      RF_.command_manager_.combined_control().F.type == POS)
   {
     run_position_control();
   }
-  else if (RF_.command_manager_.combined_control().F.type == VEL)
+  else if (RF_.command_manager_.combined_control().x.type == VEL &&
+           RF_.command_manager_.combined_control().y.type == VEL &&
+           RF_.command_manager_.combined_control().z.type == RATE &&
+           RF_.command_manager_.combined_control().F.type == POS)
   {
     run_velocity_control();
   }
-  else if (RF_.command_manager_.combined_control().F.type == ANGLE)
+  else if (RF_.command_manager_.combined_control().x.type == ANGLE &&
+           RF_.command_manager_.combined_control().y.type == ANGLE &&
+           RF_.command_manager_.combined_control().z.type == RATE &&
+           RF_.command_manager_.combined_control().F.type == THROTTLE)
   {
     run_angle_control();
   }
-  else if (RF_.command_manager_.combined_control().F.type == RATE)
+  else if (RF_.command_manager_.combined_control().x.type == RATE &&
+           RF_.command_manager_.combined_control().y.type == RATE &&
+           RF_.command_manager_.combined_control().z.type == RATE &&
+           RF_.command_manager_.combined_control().F.type == THROTTLE)
   {
     run_angular_rate_control();
   }

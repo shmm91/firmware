@@ -442,6 +442,12 @@ void Mavlink::handle_msg_offboard_control(const mavlink_message_t *const msg)
   case MODE_ROLL_PITCH_YAWRATE_THROTTLE:
     control.mode = CommLink::OffboardControl::Mode::ROLL_PITCH_YAWRATE_THROTTLE;
     break;
+  case MODE_XVEL_YVEL_YAWRATE_ALTITUDE:
+    control.mode = CommLink::OffboardControl::Mode::XVEL_YVEL_YAWRATE_ALTITUDE;
+    break;
+  case MODE_XPOS_YPOS_YAW_ALTITUDE:
+    control.mode = CommLink::OffboardControl::Mode::XPOS_YPOS_YAW_ALTITUDE;
+    break;
   default:
     // invalid mode; ignore message and return without calling callback
     return;
