@@ -144,12 +144,30 @@ void Params::set_defaults(void)
   init_param_float(PARAM_PID_PITCH_ANGLE_I, "PID_PITCH_ANG_I", 0.0f);  // Pitch Angle Integral Gain | 0.0 | 1000.0
   init_param_float(PARAM_PID_PITCH_ANGLE_D, "PID_PITCH_ANG_D", 0.05f); // Pitch Angle Derivative Gain | 0.0 | 1000.0
 
+  init_param_float(PARAM_EQ_THROTTLE, "EQ_THROTTLE", 0.0f); // Throttle signal to achieve hover during flight | 0.0 | 1.0
   init_param_float(PARAM_X_EQ_TORQUE, "X_EQ_TORQUE", 0.0f); // Equilibrium torque added to output of controller on x axis | -1.0 | 1.0
   init_param_float(PARAM_Y_EQ_TORQUE, "Y_EQ_TORQUE", 0.0f); // Equilibrium torque added to output of controller on y axis | -1.0 | 1.0
   init_param_float(PARAM_Z_EQ_TORQUE, "Z_EQ_TORQUE", 0.0f); // Equilibrium torque added to output of controller on z axis | -1.0 | 1.0
 
   init_param_float(PARAM_PID_TAU, "PID_TAU", 0.05f); // Dirty Derivative time constant - See controller documentation | 0.0 | 1.0
 
+  init_param_float(PARAM_NLC_POS_N, "NLC_POS_N", 0.5f); // Nonlinear Controller Position North Gain | 0.0 | 100.0
+  init_param_float(PARAM_NLC_POS_E, "NLC_POS_E", 0.5f); // Nonlinear Controller Position East Gain | 0.0 | 100.0
+  init_param_float(PARAM_NLC_POS_D, "NLC_POS_D", 0.5f); // Nonlinear Controller Position Down Gain | 0.0 | 100.0
+
+  init_param_float(PARAM_NLC_VEL_X, "NLC_VEL_X", 2.0f); // Nonlinear Controller Horizontal Velocity Forward Gain | 0.0 | 100.0
+  init_param_float(PARAM_NLC_VEL_Y, "NLC_VEL_Y", 2.0f); // Nonlinear Controller Horizontal Velocity Right Gain | 0.0 | 100.0
+  init_param_float(PARAM_NLC_VEL_Z, "NLC_VEL_Z", 2.0f); // Nonlinear Controller Velocity Vertical Down Gain | 0.0 | 100.0
+
+  init_param_float(PARAM_NLC_DIST_X, "NLC_DIST_X", 0.05f); // Nonlinear Controller Horizontal Disturbance Forward Gain | 0.0 | 100.0
+  init_param_float(PARAM_NLC_DIST_Y, "NLC_DIST_Y", 0.05f); // Nonlinear Controller Horizontal Disturbance Right Gain | 0.0 | 100.0
+  init_param_float(PARAM_NLC_DIST_Z, "NLC_DIST_Z", 0.05f); // Nonlinear Controller Disturbance Vertical Down Gain | 0.0 | 100.0
+
+  init_param_float(PARAM_NLC_MAX_VEL, "NLC_MAX_VEL", 0.5f); // Maximum Allowed Velocity Command | 0.0 | 100.0
+  init_param_float(PARAM_NLC_MAX_YAW_RATE, "NLC_MAX_YAW_RATE", 0.78f); // Maximum Allowed Yaw Rate Command | 0.0 | 10.0
+
+  init_param_float(PARAM_NLC_ANGLE_P, "NLC_ANGLE_P", 0.15f);   // Nonlinear Controller Angle Proporitional Gain | 0.0 | 1000.0
+  init_param_float(PARAM_NLC_ANGLE_D, "NLC_ANGLE_D", 0.05f);   // Nonlinear Controller Angle Derivative Gain | 0.0 | 1000.0
 
   /*************************/
   /*** PWM CONFIGURATION ***/

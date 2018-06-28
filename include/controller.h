@@ -40,6 +40,8 @@
 #include "command_manager.h"
 #include "estimator.h"
 
+using namespace rosflight_math;
+
 namespace rosflight_firmware
 {
 
@@ -91,7 +93,10 @@ private:
 
   ROSflight& RF_;
 
-  void run_ins();
+  void run_position_control();
+  void run_velocity_control();
+  void run_angle_control();
+  void run_angular_rate_control();
   void run_pid();
   Vec3 run_pid_loops(uint32_t dt, const Estimator::State& state, const control_t& command, bool update_integrators);
 
@@ -102,6 +107,11 @@ private:
   PID pitch_;
   PID pitch_rate_;
   PID yaw_rate_;
+
+  Vec3 dhat_;
+  Mat33 K_p_;
+  Mat33 K_v_;
+  Mat33 K_d_;
 
   uint64_t prev_time_us_;
 };

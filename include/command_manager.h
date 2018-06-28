@@ -44,8 +44,10 @@ class ROSflight;
 
 typedef enum
 {
-  RATE,         // Channel is is in rate mode (mrad/s)
+  POS,          // Channel command is in position mode (m)
+  VEL,          // Channel command is in velocity mode (m/s)
   ANGLE,        // Channel command is in angle mode (mrad)
+  RATE,         // Channel command is in rate mode (mrad/s)
   THROTTLE,     // Channel is direcly controlling throttle max/1000
   PASSTHROUGH,  // Channel directly passes PWM input to the mixer
 } control_type_t;
